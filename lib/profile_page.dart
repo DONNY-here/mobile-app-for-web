@@ -1,7 +1,8 @@
+
 part of 'main.dart';
 
 // ======================================================
-// PROFILE
+// TMC EVENTEASE - ENHANCED PROFILE PAGE
 // ======================================================
 
 class ProfilePage extends StatefulWidget {
@@ -12,31 +13,70 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
+
+  // ====================================================
+  // OPEN EDIT PROFILE
+  // ====================================================
+
   Future<void> openEditProfile() async {
-    await Navigator.push(context, animatedRoute(const EditProfilePage()));
+    await Navigator.push(
+      context,
+      animatedRoute(
+        const EditProfilePage(),
+      ),
+    );
 
     if (!mounted) return;
+
+    // Refresh profile details after editing.
     setState(() {});
   }
+
+  // ====================================================
+  // LOGOUT WITH CONFIRMATION
+  // ====================================================
 
   Future<void> logout() async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          icon: const Icon(Icons.logout_rounded, color: navy, size: 34),
-          title: const Text('Logout?'),
-          content: const Text(
-            'Are you sure you want to end your current session?',
+          icon: const Icon(
+            Icons.logout_rounded,
+            color: navy,
+            size: 34,
           ),
+
+          title: const Text(
+            'Logout?',
+          ),
+
+          content: const Text(
+            'Are you sure you want to end '
+                'your current session?',
+          ),
+
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(dialogContext, false),
+              onPressed: () {
+                Navigator.pop(
+                  dialogContext,
+                  false,
+                );
+              },
               child: const Text('Stay'),
             ),
+
             FilledButton(
-              style: FilledButton.styleFrom(backgroundColor: navy),
-              onPressed: () => Navigator.pop(dialogContext, true),
+              style: FilledButton.styleFrom(
+                backgroundColor: navy,
+              ),
+              onPressed: () {
+                Navigator.pop(
+                  dialogContext,
+                  true,
+                );
+              },
               child: const Text('Logout'),
             ),
           ],
@@ -44,173 +84,65 @@ class _ProfilePageState extends State<ProfilePage> {
       },
     );
 
-    if (confirm != true || !mounted) return;
+    if (confirm != true || !mounted) {
+      return;
+    }
 
+    // Keep your existing authentication cleanup,
+    // logout handling and navigation.
     logoutEventEaseUser(context);
   }
 
+  // ====================================================
+  // RESET PASSWORD
+  // ====================================================
+
+  void openResetPassword() {
+    Navigator.push(
+      context,
+      animatedRoute(
+        ForgotPasswordPage(
+          initialEmail: savedEmail,
+        ),
+      ),
+    );
+  }
+
+  // ====================================================
+  // ENHANCED PROFILE USER INTERFACE
+  // ====================================================
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Profile'),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: IconButton(
-              tooltip: 'Edit Profile',
-              onPressed: openEditProfile,
-              icon: const Icon(Icons.edit_outlined),
-            ),
-          ),
-        ],
-      ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(18, 20, 18, 30),
-        children: [
-          TweenAnimationBuilder<double>(
-            tween: Tween(begin: 0.92, end: 1),
-            duration: const Duration(milliseconds: 400),
-            curve: Curves.easeOutCubic,
-            builder: (context, value, child) {
-              return Transform.scale(scale: value, child: child);
-            },
-            child: Container(
-              padding: const EdgeInsets.all(22),
-              decoration: BoxDecoration(
-                gradient: appGradient,
-                borderRadius: BorderRadius.circular(26),
-                boxShadow: [
-                  BoxShadow(
-                    color: navy.withValues(alpha: 0.16),
-                    blurRadius: 20,
-                    offset: const Offset(0, 9),
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  Container(
-                    width: 92,
-                    height: 92,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.14),
-                      borderRadius: BorderRadius.circular(28),
-                      border: Border.all(color: Colors.white24),
-                    ),
-                    child: const Icon(
-                      Icons.person_rounded,
-                      size: 56,
-                      color: yellow,
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  Text(
-                    savedName.isEmpty ? 'Student' : savedName,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 23,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 5),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      savedCourse.isEmpty
-                          ? 'TMC Student'
-                          : '$savedCourse • $savedYear',
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 24),
+    return EventEaseProfileView(
 
-          sectionTitle('Account Information'),
-          const SizedBox(height: 12),
+      // ================================================
+      // STUDENT PERSONAL INFORMATION
+      // ================================================
 
-          // EMAIL
-          ProfileInfo(
-            icon: Icons.email_outlined,
-            title: 'Email',
-            value: savedEmail,
-          ),
+      name: savedName,
 
-          const SizedBox(height: 10),
+      email: savedEmail,
 
-          ProfileInfo(
-            icon: Icons.badge_outlined,
-            title: 'Student ID',
-            value: savedStudentId.isEmpty ? 'Not provided' : savedStudentId,
-          ),
+      studentId: savedStudentId,
 
-          const SizedBox(height: 10),
+      department: savedDepartment,
 
-          // DEPARTMENT
-          ProfileInfo(
-            icon: Icons.account_balance_outlined,
-            title: 'Department',
-            value: savedDepartment.isEmpty ? 'Not specified' : savedDepartment,
-          ),
+      course: savedCourse,
 
-          const SizedBox(height: 10),
+      year: savedYear,
 
-          // COURSE / PROGRAM
-          ProfileInfo(
-            icon: Icons.school_outlined,
-            title: 'Course / Program',
-            value: savedCourse,
-          ),
+      block: savedBlock,
 
-          const SizedBox(height: 10),
+      // ================================================
+      // PROFILE ACTIONS
+      // ================================================
 
-          // YEAR LEVEL
-          ProfileInfo(
-            icon: Icons.calendar_month_outlined,
-            title: 'Year Level',
-            value: savedYear,
-          ),
+      onEdit: openEditProfile,
 
-          const SizedBox(height: 10),
+      onResetPassword: openResetPassword,
 
-          // BLOCK
-          ProfileInfo(
-            icon: Icons.groups_outlined,
-            title: 'Block',
-            value: savedBlock.isEmpty ? 'Not specified' : savedBlock,
-          ),
-
-          const SizedBox(height: 22),
-          OutlinedButton.icon(
-            onPressed: openEditProfile,
-            icon: const Icon(Icons.edit_outlined),
-            label: const Text('Edit Profile'),
-          ),
-          const SizedBox(height: 10),
-          ElevatedButton.icon(
-            onPressed: () async {
-              await logoutEventEaseUser(context);
-            },
-            icon: const Icon(Icons.logout_rounded),
-            label: const Text('Logout'),
-          ),
-        ],
-      ),
+      onLogout: logout,
     );
   }
 }

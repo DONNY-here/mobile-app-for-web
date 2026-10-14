@@ -12,6 +12,8 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'services/qr_verification_service.dart';
 import 'services/auth_service.dart';
 import 'services/demo_session_storage.dart';
+import 'app_theme_controller.dart';
+import 'eventease_profile_view.dart';
 
 part 'config_and_data.dart';
 part 'app.dart';

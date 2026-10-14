@@ -1,4 +1,3 @@
-
 part of 'main.dart';
 
 // ======================================================
@@ -15,100 +14,62 @@ class MainPage extends StatefulWidget {
 class _MainPageState extends State<MainPage> {
   int selectedIndex = 0;
 
-  bool get isScanner =>
-      savedUserRole == 'scanner' ||
-          savedUserRole == 'admin';
+  bool get isScanner => savedUserRole == 'scanner' || savedUserRole == 'admin';
 
   @override
   Widget build(BuildContext context) {
     final List<Widget> pages = isScanner
-        ? const [
-      QRCodePage(),
-      ScannerProfilePage(),
-    ]
-        : const [
-      DashboardPage(),
-      EventsPage(),
-      MyEventsPage(),
-      ProfilePage(),
-    ];
+        ? const [QRCodePage(), ScannerProfilePage()]
+        : [
+            DashboardPage(
+              onTabSelected: (index) {
+                setState(() {
+                  selectedIndex = index;
+                });
+              },
+            ),
+            const EventsPage(),
+            const MyEventsPage(),
+            const ProfilePage(),
+          ];
 
-    final List<NavigationDestination> destinations =
-    isScanner
+    final List<NavigationDestination> destinations = isScanner
         ? const [
-      NavigationDestination(
-        icon: Icon(
-          Icons.qr_code_scanner_outlined,
-          color: textGrey,
-        ),
-        selectedIcon: Icon(
-          Icons.qr_code_scanner_rounded,
-          color: navy,
-        ),
-        label: 'Scan QR',
-      ),
-      NavigationDestination(
-        icon: Icon(
-          Icons.person_outline,
-          color: textGrey,
-        ),
-        selectedIcon: Icon(
-          Icons.person_rounded,
-          color: navy,
-        ),
-        label: 'Profile',
-      ),
-    ]
+            NavigationDestination(
+              icon: Icon(Icons.qr_code_scanner_outlined, color: textGrey),
+              selectedIcon: Icon(Icons.qr_code_scanner_rounded, color: navy),
+              label: 'Scan QR',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.person_outline, color: textGrey),
+              selectedIcon: Icon(Icons.person_rounded, color: navy),
+              label: 'Profile',
+            ),
+          ]
         : const [
-      NavigationDestination(
-        icon: Icon(
-          Icons.home_outlined,
-          color: textGrey,
-        ),
-        selectedIcon: Icon(
-          Icons.home_rounded,
-          color: navy,
-        ),
-        label: 'Home',
-      ),
-      NavigationDestination(
-        icon: Icon(
-          Icons.event_outlined,
-          color: textGrey,
-        ),
-        selectedIcon: Icon(
-          Icons.event_rounded,
-          color: navy,
-        ),
-        label: 'Events',
-      ),
-      NavigationDestination(
-        icon: Icon(
-          Icons.confirmation_num_outlined,
-          color: textGrey,
-        ),
-        selectedIcon: Icon(
-          Icons.confirmation_num_rounded,
-          color: navy,
-        ),
-        label: 'My Events',
-      ),
-      NavigationDestination(
-        icon: Icon(
-          Icons.person_outline,
-          color: textGrey,
-        ),
-        selectedIcon: Icon(
-          Icons.person_rounded,
-          color: navy,
-        ),
-        label: 'Profile',
-      ),
-    ];
+            NavigationDestination(
+              icon: Icon(Icons.home_outlined, color: textGrey),
+              selectedIcon: Icon(Icons.home_rounded, color: navy),
+              label: 'Home',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.event_outlined, color: textGrey),
+              selectedIcon: Icon(Icons.event_rounded, color: navy),
+              label: 'Events',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.confirmation_num_outlined, color: textGrey),
+              selectedIcon: Icon(Icons.confirmation_num_rounded, color: navy),
+              label: 'My Events',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.person_outline, color: textGrey),
+              selectedIcon: Icon(Icons.person_rounded, color: navy),
+              label: 'Profile',
+            ),
+          ];
 
-    final safeIndex = selectedIndex < pages.length
-        ? selectedIndex
-        : 0;
+    final safeIndex = selectedIndex < pages.length ? selectedIndex : 0;
 
     return Scaffold(
       body: AnimatedSwitcher(

@@ -18,6 +18,7 @@ part 'app.dart';
 part 'session_gate.dart';
 part 'helpers.dart';
 part 'login_page.dart';
+part 'forgot_password_page.dart';
 part 'register_page.dart';
 part 'main_page.dart';
 part 'dashboard_page.dart';

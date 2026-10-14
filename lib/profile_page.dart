@@ -153,6 +153,14 @@ class _ProfilePageState extends State<ProfilePage> {
 
           const SizedBox(height: 10),
 
+          ProfileInfo(
+            icon: Icons.badge_outlined,
+            title: 'Student ID',
+            value: savedStudentId.isEmpty ? 'Not provided' : savedStudentId,
+          ),
+
+          const SizedBox(height: 10),
+
           // DEPARTMENT
           ProfileInfo(
             icon: Icons.account_balance_outlined,
@@ -195,9 +203,9 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
           const SizedBox(height: 10),
           ElevatedButton.icon(
-               onPressed: () async {
-                await logoutEventEaseUser(context);
-                },
+            onPressed: () async {
+              await logoutEventEaseUser(context);
+            },
             icon: const Icon(Icons.logout_rounded),
             label: const Text('Logout'),
           ),

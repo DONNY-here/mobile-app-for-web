@@ -416,6 +416,38 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                           ),
 
+                          const SizedBox(height: 4),
+
+                          // ======================================================
+                          // FORGOT PASSWORD BUTTON
+                          // ======================================================
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton(
+                              onPressed: isLoggingIn
+                                  ? null
+                                  : () {
+                                      Navigator.push(
+                                        context,
+                                        animatedRoute(
+                                          ForgotPasswordPage(
+                                            initialEmail: emailController.text
+                                                .trim(),
+                                          ),
+                                        ),
+                                      );
+                                    },
+                              child: const Text(
+                                'Forgot Password?',
+                                style: TextStyle(
+                                  color: navy,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ),
+
                           // REMEMBER ME - DEMO MODE ONLY
                           if (!ApiConfig.useRealApi) ...[
                             const SizedBox(height: 8),

@@ -48,4 +48,30 @@ class ApiConfig {
 
     return base.replace(path: loginPath);
   }
+
+  // ======================================================
+  // FORGOT PASSWORD API CONFIGURATION
+  // ======================================================
+
+  static const String forgotPasswordPath = String.fromEnvironment(
+    'EVENTEASE_FORGOT_PASSWORD_PATH',
+    defaultValue: '/api/auth/forgot-password',
+  );
+
+  static Uri? get forgotPasswordUri {
+    final login = loginUri;
+
+    if (login == null) {
+      return null;
+    }
+
+    if (!forgotPasswordPath.startsWith('/') ||
+        forgotPasswordPath.startsWith('//') ||
+        forgotPasswordPath.contains('?') ||
+        forgotPasswordPath.contains('#')) {
+      throw const FormatException('Invalid password recovery path.');
+    }
+
+    return login.replace(path: forgotPasswordPath);
+  }
 }

@@ -31,7 +31,6 @@ const List<String> courseOptions = [
   'BA - Comm',
 ];
 
-
 const List<String> blockOptions = [
   'Block 1',
   'Block 2',
@@ -45,7 +44,6 @@ const List<String> blockOptions = [
   'Block 10',
   'Block 11',
 ];
-
 
 bool isValidEmail(String email) {
   final value = email.trim();
@@ -62,7 +60,6 @@ String createLocalQrToken() {
   return List.generate(40, (_) => chars[random.nextInt(chars.length)]).join();
 }
 
-
 const String studentQrPrefix = 'EVENTEASE_STUDENT:';
 
 // Temporary student QR credential for development.
@@ -71,10 +68,7 @@ String createStudentEventQr(Event event) {
   final key = eventKey(event);
 
   // Generate the token only once for this registration.
-  final token = qrTokens.putIfAbsent(
-    key,
-        () => createLocalQrToken(),
-  );
+  final token = qrTokens.putIfAbsent(key, () => createLocalQrToken());
 
   return '$studentQrPrefix$token';
 }
@@ -94,7 +88,6 @@ String? decodeStudentEventQr(String rawValue) {
 
   return token;
 }
-
 
 const String attendanceQrPrefix = 'EVENTEASE_ATTENDANCE:';
 const Duration attendanceQrValidity = Duration(minutes: 5);
@@ -143,6 +136,7 @@ String formatCheckInTime(DateTime value) {
 
 String savedName = '';
 String savedEmail = '';
+String savedStudentId = '';
 String savedDepartment = '';
 String savedCourse = '';
 String savedYear = '';
@@ -153,12 +147,9 @@ String savedPassword = '';
 // Later this value must come from the authenticated API.
 String savedUserRole = 'scanner';
 
-
 // Temporary scanner identity for demonstration.
 // Replace with the authenticated user's identity from the API.
 String demoScannerName = 'TMC Event Officer';
-
-
 
 class Event {
   final String title;
@@ -204,14 +195,12 @@ class Event {
   });
 }
 
-
 const List<String> allYearLevels = [
   '1st Year',
   '2nd Year',
   '3rd Year',
   '4th Year',
 ];
-
 
 const List<Event> eventList = [
   Event(
@@ -220,7 +209,7 @@ const List<Event> eventList = [
     time: '9:00 AM - 12:00 PM',
     venue: 'TMC Auditorium',
     description:
-    'A technology seminar where students can learn '
+        'A technology seminar where students can learn '
         'about the latest trends in information technology.',
 
     scope: 'School-Wide',
@@ -239,8 +228,7 @@ const List<Event> eventList = [
     date: 'September 12, 2026',
     time: '1:00 PM - 4:00 PM',
     venue: 'Computer Laboratory',
-    description:
-    'A beginner-friendly workshop about website development.',
+    description: 'A beginner-friendly workshop about website development.',
 
     scope: 'School-Wide',
     department: 'All Departments',
@@ -259,7 +247,7 @@ const List<Event> eventList = [
     time: '8:00 AM - 5:00 PM',
     venue: 'TMC Covered Court',
     description:
-    'An esports competition for students from different departments.',
+        'An esports competition for students from different departments.',
 
     scope: 'School-Wide',
     department: 'All Departments',
@@ -277,8 +265,7 @@ const List<Event> eventList = [
     date: 'October 20, 2026',
     time: '9:00 AM',
     venue: 'TMC Campus',
-    description:
-    'Leadership seminar for TMC students.',
+    description: 'Leadership seminar for TMC students.',
 
     scope: 'School-Wide',
     department: 'All Departments',
@@ -299,14 +286,13 @@ const List<Event> eventList = [
     registrationDeadline: 'October 19, 2026',
   ),
 
-
   Event(
     title: 'CCS Programming Competition',
     date: 'November 10, 2026',
     time: '8:00 AM - 12:00 PM',
     venue: 'TMC Computer Laboratory',
     description:
-    'A programming competition exclusively for '
+        'A programming competition exclusively for '
         'College of Computer Studies students.',
 
     scope: 'Department-Specific',
@@ -319,9 +305,7 @@ const List<Event> eventList = [
     currentParticipants: 0,
     registrationDeadline: 'November 8, 2026',
   ),
-
 ];
-
 
 final List<Event> registeredEvents = [];
 final Map<String, String> attendanceStatus = {};
@@ -329,7 +313,6 @@ final Map<String, int> eventRatings = {};
 final Map<String, String> eventComments = {};
 final Map<String, String> qrTokens = {};
 final Map<String, String> attendanceCheckInTime = {};
-
 
 class ScanHistory {
   final String eventTitle;
@@ -356,7 +339,7 @@ final List<ScanHistory> scanHistory = [];
 // ======================================================
 
 final ValueNotifier<Set<String>> readNotificationIds =
-ValueNotifier<Set<String>>(<String>{});
+    ValueNotifier<Set<String>>(<String>{});
 
 const List<String> generalNotificationIds = [
   'announcement_techtalk',
@@ -399,10 +382,7 @@ int getUnreadNotificationCount() {
 
 // Mark one notification as read.
 void markNotificationAsRead(String id) {
-  readNotificationIds.value = {
-    ...readNotificationIds.value,
-    id,
-  };
+  readNotificationIds.value = {...readNotificationIds.value, id};
 }
 
 // Mark all current notifications as read.
@@ -416,13 +396,8 @@ void markAllNotificationsAsRead() {
 // Refresh notification listeners after event activity changes.
 
 void refreshNotifications() {
-  readNotificationIds.value = {
-    ...readNotificationIds.value,
-  };
+  readNotificationIds.value = {...readNotificationIds.value};
 }
-
-
-
 
 void clearStudentActivityData() {
   registeredEvents.clear();
@@ -435,4 +410,3 @@ void clearStudentActivityData() {
   // Reset read notification records for the next student.
   readNotificationIds.value = <String>{};
 }
-

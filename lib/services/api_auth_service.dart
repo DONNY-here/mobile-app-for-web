@@ -28,9 +28,7 @@ class ApiAuthService {
   final http.Client _client;
   final Uri _loginUri;
 
-  ApiAuthService({required http.Client client, required Uri loginUri})
-    : _client = client,
-      _loginUri = loginUri {
+  ApiAuthService({required this._client, required this._loginUri}) {
     // Real credentials must be sent over HTTPS.
     if (_loginUri.scheme != 'https' ||
         _loginUri.host.isEmpty ||

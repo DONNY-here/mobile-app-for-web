@@ -2,6 +2,7 @@ part of 'main.dart';
 
 // ======================================================
 // TMC EVENTEASE - ENHANCED STUDENT DASHBOARD
+// LIGHT AND DARK MODE SUPPORTED
 // ======================================================
 
 class DashboardPage extends StatelessWidget {
@@ -15,6 +16,29 @@ class DashboardPage extends StatelessWidget {
   static const Color paleGreen = Color(0xFFEAF8F0);
 
   // ======================================================
+  // LIGHT AND DARK MODE COLORS
+  // ======================================================
+
+  bool _isDark(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark;
+
+  Color _surface(BuildContext context) => Theme.of(context).colorScheme.surface;
+
+  Color _primaryText(BuildContext context) =>
+      Theme.of(context).colorScheme.onSurface;
+
+  Color _secondaryText(BuildContext context) =>
+      Theme.of(context).colorScheme.onSurfaceVariant;
+
+  Color _outline(BuildContext context) =>
+      Theme.of(context).colorScheme.outlineVariant;
+
+  Color _accent(BuildContext context) => _isDark(context) ? yellow : navy;
+
+  Color _shadow(BuildContext context) =>
+      Colors.black.withValues(alpha: _isDark(context) ? 0.22 : 0.045);
+
+  // ======================================================
   // DATE HANDLING
   // ======================================================
 
@@ -22,6 +46,7 @@ class DashboardPage extends StatelessWidget {
     final text = value.trim();
 
     final isoDate = DateTime.tryParse(text);
+
     if (isoDate != null) {
       return DateTime(isoDate.year, isoDate.month, isoDate.day);
     }
@@ -104,6 +129,7 @@ class DashboardPage extends StatelessWidget {
   // ======================================================
 
   Widget _sectionHeader({
+    required BuildContext context,
     required String title,
     required IconData icon,
     required VoidCallback onSeeAll,
@@ -118,7 +144,7 @@ class DashboardPage extends StatelessWidget {
             color: yellow.withValues(alpha: 0.24),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(icon, color: navy, size: 21),
+          child: Icon(icon, color: _accent(context), size: 21),
         ),
 
         const SizedBox(width: 10),
@@ -126,29 +152,33 @@ class DashboardPage extends StatelessWidget {
         Expanded(
           child: Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 19,
               fontWeight: FontWeight.w800,
-              color: textDark,
+              color: _primaryText(context),
             ),
           ),
         ),
 
         TextButton(
           onPressed: onSeeAll,
-          child: const Row(
+          child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'See all',
+                actionText,
                 style: TextStyle(
-                  color: navy,
+                  color: _accent(context),
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
                 ),
               ),
-              SizedBox(width: 3),
-              Icon(Icons.arrow_forward_ios_rounded, size: 12, color: navy),
+              const SizedBox(width: 3),
+              Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 12,
+                color: _accent(context),
+              ),
             ],
           ),
         ),
@@ -279,6 +309,7 @@ class DashboardPage extends StatelessWidget {
   // ======================================================
 
   Widget _statCard({
+    required BuildContext context,
     required String label,
     required int value,
     required IconData icon,
@@ -295,7 +326,7 @@ class DashboardPage extends StatelessWidget {
           border: Border.all(color: accent.withValues(alpha: 0.12)),
           boxShadow: [
             BoxShadow(
-              color: navy.withValues(alpha: 0.045),
+              color: _shadow(context),
               blurRadius: 14,
               offset: const Offset(0, 6),
             ),
@@ -318,8 +349,8 @@ class DashboardPage extends StatelessWidget {
 
             Text(
               '$value',
-              style: const TextStyle(
-                color: textDark,
+              style: TextStyle(
+                color: _primaryText(context),
                 fontSize: 26,
                 fontWeight: FontWeight.w900,
               ),
@@ -331,8 +362,8 @@ class DashboardPage extends StatelessWidget {
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: textDark,
+              style: TextStyle(
+                color: _primaryText(context),
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
               ),
@@ -353,6 +384,8 @@ class DashboardPage extends StatelessWidget {
     required bool attended,
     bool registered = false,
   }) {
+    final dark = _isDark(context);
+
     final label = registered
         ? 'REGISTERED'
         : attended
@@ -360,148 +393,156 @@ class DashboardPage extends StatelessWidget {
         : 'PAST';
 
     final labelColor = registered
-        ? dashboardBlue
+        ? (dark ? const Color(0xFF9CCBFF) : dashboardBlue)
         : attended
-        ? const Color(0xFF198754)
-        : textGrey;
+        ? (dark ? const Color(0xFF85E4AB) : const Color(0xFF198754))
+        : _secondaryText(context);
 
     final labelBackground = registered
-        ? paleBlue
+        ? (dark ? const Color(0xFF263E5D) : paleBlue)
         : attended
-        ? paleGreen
-        : const Color(0xFFF0F2F5);
+        ? (dark ? const Color(0xFF203E30) : paleGreen)
+        : (dark ? const Color(0xFF303848) : const Color(0xFFF0F2F5));
 
     return Container(
       margin: const EdgeInsets.only(bottom: 11),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: _surface(context),
         borderRadius: BorderRadius.circular(21),
-        border: Border.all(color: borderColor),
+        border: Border.all(color: _outline(context)),
         boxShadow: [
           BoxShadow(
-            color: navy.withValues(alpha: 0.045),
+            color: _shadow(context),
             blurRadius: 16,
             offset: const Offset(0, 5),
           ),
         ],
       ),
-      child: InkWell(
+      child: Material(
+        color: Colors.transparent,
         borderRadius: BorderRadius.circular(21),
-        onTap: () => _openEvent(context, event),
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Row(
-            children: [
-              Container(
-                width: 67,
-                height: 74,
-                decoration: BoxDecoration(
-                  gradient: appGradient,
-                  borderRadius: BorderRadius.circular(17),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(21),
+          onTap: () => _openEvent(context, event),
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(
+              children: [
+                Container(
+                  width: 67,
+                  height: 74,
+                  decoration: BoxDecoration(
+                    gradient: appGradient,
+                    borderRadius: BorderRadius.circular(17),
+                  ),
+                  child: const Icon(
+                    Icons.event_available_rounded,
+                    color: yellow,
+                    size: 35,
+                  ),
                 ),
-                child: const Icon(
-                  Icons.event_available_rounded,
-                  color: yellow,
-                  size: 35,
-                ),
-              ),
 
-              const SizedBox(width: 12),
+                const SizedBox(width: 12),
 
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      event.title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: textDark,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-
-                    const SizedBox(height: 7),
-
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.calendar_today_outlined,
-                          size: 13,
-                          color: textGrey,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        event.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: _primaryText(context),
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
                         ),
-                        const SizedBox(width: 5),
-                        Expanded(
+                      ),
+
+                      const SizedBox(height: 7),
+
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.calendar_today_outlined,
+                            size: 13,
+                            color: _secondaryText(context),
+                          ),
+
+                          const SizedBox(width: 5),
+
+                          Expanded(
+                            child: Text(
+                              event.date,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: _secondaryText(context),
+                                fontSize: 11,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 4),
+
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.location_on_outlined,
+                            size: 14,
+                            color: _secondaryText(context),
+                          ),
+
+                          const SizedBox(width: 4),
+
+                          Expanded(
+                            child: Text(
+                              event.venue,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: _secondaryText(context),
+                                fontSize: 11,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 9),
+
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 9,
+                            vertical: 5,
+                          ),
+                          decoration: BoxDecoration(
+                            color: labelBackground,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
                           child: Text(
-                            event.date,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: textGrey,
-                              fontSize: 11,
+                            label,
+                            style: TextStyle(
+                              color: labelColor,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
                             ),
                           ),
                         ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 4),
-
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.location_on_outlined,
-                          size: 14,
-                          color: textGrey,
-                        ),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            event.venue,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: textGrey,
-                              fontSize: 11,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 9),
-
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 9,
-                          vertical: 5,
-                        ),
-                        decoration: BoxDecoration(
-                          color: labelBackground,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          label,
-                          style: TextStyle(
-                            color: labelColor,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
 
-              const SizedBox(width: 5),
+                const SizedBox(width: 5),
 
-              const Icon(Icons.chevron_right_rounded, color: navy),
-            ],
+                Icon(Icons.chevron_right_rounded, color: _accent(context)),
+              ],
+            ),
           ),
         ),
       ),
@@ -512,23 +553,33 @@ class DashboardPage extends StatelessWidget {
   // EMPTY STATE
   // ======================================================
 
-  Widget _emptyCard({required IconData icon, required String message}) {
+  Widget _emptyCard({
+    required BuildContext context,
+    required IconData icon,
+    required String message,
+  }) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: _surface(context),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: borderColor),
+        border: Border.all(color: _outline(context)),
       ),
       child: Column(
         children: [
-          Icon(icon, size: 36, color: textGrey),
+          Icon(icon, size: 36, color: _secondaryText(context)),
+
           const SizedBox(height: 9),
+
           Text(
             message,
             textAlign: TextAlign.center,
-            style: const TextStyle(color: textGrey, fontSize: 13, height: 1.4),
+            style: TextStyle(
+              color: _secondaryText(context),
+              fontSize: 13,
+              height: 1.4,
+            ),
           ),
         ],
       ),
@@ -542,72 +593,80 @@ class DashboardPage extends StatelessWidget {
   Widget _announcementCard(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: _surface(context),
         borderRadius: BorderRadius.circular(21),
-        border: Border.all(color: borderColor),
+        border: Border.all(color: _outline(context)),
         boxShadow: [
           BoxShadow(
-            color: navy.withValues(alpha: 0.045),
+            color: _shadow(context),
             blurRadius: 16,
             offset: const Offset(0, 5),
           ),
         ],
       ),
-      child: InkWell(
+      child: Material(
+        color: Colors.transparent,
         borderRadius: BorderRadius.circular(21),
-        onTap: () {
-          Navigator.push(context, animatedRoute(const AnnouncementsPage()));
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(15),
-          child: Row(
-            children: [
-              Container(
-                width: 60,
-                height: 65,
-                decoration: BoxDecoration(
-                  color: paleYellow,
-                  borderRadius: BorderRadius.circular(17),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(21),
+          onTap: () {
+            Navigator.push(context, animatedRoute(const AnnouncementsPage()));
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(15),
+            child: Row(
+              children: [
+                Container(
+                  width: 60,
+                  height: 65,
+                  decoration: BoxDecoration(
+                    color: _isDark(context)
+                        ? const Color(0xFF3D3625)
+                        : paleYellow,
+                    borderRadius: BorderRadius.circular(17),
+                  ),
+                  child: const Icon(
+                    Icons.campaign_rounded,
+                    size: 34,
+                    color: Color(0xFFD49B06),
+                  ),
                 ),
-                child: const Icon(
-                  Icons.campaign_rounded,
-                  size: 34,
-                  color: Color(0xFFD49B06),
-                ),
-              ),
 
-              const SizedBox(width: 12),
+                const SizedBox(width: 12),
 
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Event Announcements',
-                      style: TextStyle(
-                        color: textDark,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w800,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Event Announcements',
+                        style: TextStyle(
+                          color: _primaryText(context),
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
-                    ),
-                    SizedBox(height: 5),
-                    Text(
-                      'Check the latest event reminders, '
-                      'schedules, and college updates.',
-                      style: TextStyle(
-                        color: textGrey,
-                        fontSize: 12,
-                        height: 1.4,
+
+                      const SizedBox(height: 5),
+
+                      Text(
+                        'Check the latest event reminders, '
+                        'schedules, and college updates.',
+                        style: TextStyle(
+                          color: _secondaryText(context),
+                          fontSize: 12,
+                          height: 1.4,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
 
-              const SizedBox(width: 6),
+                const SizedBox(width: 6),
 
-              const Icon(Icons.chevron_right_rounded, color: navy),
-            ],
+                Icon(Icons.chevron_right_rounded, color: _accent(context)),
+              ],
+            ),
           ),
         ),
       ),
@@ -620,11 +679,13 @@ class DashboardPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Remove the time portion when comparing event dates.
+    final dark = _isDark(context);
+
+    // Compare dates without their time component.
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
 
-    // Registered events that have not yet happened.
+    // Registered events scheduled for today or later.
     final upcomingRegistered = registeredEvents.where((event) {
       final date = _parseEventDate(event.date);
       return date != null && !date.isBefore(today);
@@ -634,7 +695,7 @@ class DashboardPage extends StatelessWidget {
       return _parseEventDate(a.date)!.compareTo(_parseEventDate(b.date)!);
     });
 
-    // Events whose date has already passed.
+    // Past events from the existing events list.
     final recentEvents = eventList.where((event) {
       final date = _parseEventDate(event.date);
       return date != null && date.isBefore(today);
@@ -644,7 +705,7 @@ class DashboardPage extends StatelessWidget {
       return _parseEventDate(b.date)!.compareTo(_parseEventDate(a.date)!);
     });
 
-    // Attendance is only counted when recorded as Present.
+    // Existing attendance and registration totals.
     final attendedCount = registeredEvents.where((event) {
       return attendanceStatus[eventKey(event)] == 'Present';
     }).length;
@@ -657,12 +718,15 @@ class DashboardPage extends StatelessWidget {
         : upcomingRegistered.first;
 
     return Scaffold(
-      backgroundColor: lightBg,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
 
-      // ==================================================
-      // HEADER
-      // ==================================================
+      // ================================================
+      // APP BAR
+      // ================================================
       appBar: AppBar(
+        backgroundColor: navy,
+        foregroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
         titleSpacing: 18,
         title: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -681,7 +745,6 @@ class DashboardPage extends StatelessWidget {
             ),
           ],
         ),
-
         actions: [
           IconButton(
             tooltip: 'Announcements',
@@ -690,31 +753,30 @@ class DashboardPage extends StatelessWidget {
               Navigator.push(context, animatedRoute(const AnnouncementsPage()));
             },
           ),
-
           const SizedBox(width: 8),
         ],
       ),
 
-      // ==================================================
+      // ================================================
       // SCROLLABLE DASHBOARD CONTENT
-      // ==================================================
+      // ================================================
       body: ListView(
         padding: const EdgeInsets.fromLTRB(17, 20, 17, 30),
         children: [
-          // ================================================
+          // ============================================
           // WELCOME BANNER
-          // ================================================
+          // ============================================
           _welcomeBanner(),
 
           const SizedBox(height: 27),
 
-          // ================================================
+          // ============================================
           // MY EVENT OVERVIEW
-          // ================================================
+          // ============================================
           _sectionHeader(
+            context: context,
             title: 'My Event Overview',
             icon: Icons.bar_chart_rounded,
-            actionText: 'See all',
             onSeeAll: () => _goToTab(context, 2),
           ),
 
@@ -723,41 +785,51 @@ class DashboardPage extends StatelessWidget {
           Row(
             children: [
               _statCard(
+                context: context,
                 label: 'Registered',
                 value: registeredCount,
                 icon: Icons.event_available_rounded,
-                accent: const Color(0xFF2169C9),
-                background: paleBlue,
+                accent: dark
+                    ? const Color(0xFF86B8FF)
+                    : const Color(0xFF2169C9),
+                background: dark ? const Color(0xFF20354F) : paleBlue,
               ),
 
               const SizedBox(width: 9),
 
               _statCard(
+                context: context,
                 label: 'Upcoming',
                 value: upcomingCount,
                 icon: Icons.access_time_filled_rounded,
-                accent: const Color(0xFFD89A00),
-                background: paleYellow,
+                accent: dark
+                    ? const Color(0xFFFFD878)
+                    : const Color(0xFFD89A00),
+                background: dark ? const Color(0xFF3A3425) : paleYellow,
               ),
 
               const SizedBox(width: 9),
 
               _statCard(
+                context: context,
                 label: 'Attended',
                 value: attendedCount,
                 icon: Icons.check_circle_rounded,
-                accent: const Color(0xFF20955C),
-                background: paleGreen,
+                accent: dark
+                    ? const Color(0xFF85E4AB)
+                    : const Color(0xFF20955C),
+                background: dark ? const Color(0xFF20392F) : paleGreen,
               ),
             ],
           ),
 
           const SizedBox(height: 27),
 
-          // ================================================
+          // ============================================
           // MY NEXT REGISTERED EVENT
-          // ================================================
+          // ============================================
           _sectionHeader(
+            context: context,
             title: 'My Next Event',
             icon: Icons.calendar_month_rounded,
             onSeeAll: () => _goToTab(context, 2),
@@ -774,6 +846,7 @@ class DashboardPage extends StatelessWidget {
             )
           else
             _emptyCard(
+              context: context,
               icon: Icons.event_busy_outlined,
               message:
                   'You have no upcoming registered events. '
@@ -782,10 +855,11 @@ class DashboardPage extends StatelessWidget {
 
           const SizedBox(height: 24),
 
-          // ================================================
+          // ============================================
           // RECENT EVENTS
-          // ================================================
+          // ============================================
           _sectionHeader(
+            context: context,
             title: 'Recent Events',
             icon: Icons.history_rounded,
             onSeeAll: () => _goToTab(context, 1),
@@ -795,6 +869,7 @@ class DashboardPage extends StatelessWidget {
 
           if (recentEvents.isEmpty)
             _emptyCard(
+              context: context,
               icon: Icons.history_toggle_off_rounded,
               message: 'No recent events to display.',
             )
@@ -811,10 +886,11 @@ class DashboardPage extends StatelessWidget {
 
           const SizedBox(height: 16),
 
-          // ================================================
+          // ============================================
           // LATEST ANNOUNCEMENTS
-          // ================================================
+          // ============================================
           _sectionHeader(
+            context: context,
             title: 'Latest Announcements',
             icon: Icons.campaign_rounded,
             onSeeAll: () {

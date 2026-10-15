@@ -1,7 +1,8 @@
 part of 'main.dart';
 
 // ======================================================
-// MY REGISTERED EVENTS - ENHANCED UI
+// TMC EVENTEASE - MY EVENTS PAGE
+// WITH ALL, UPCOMING, ATTENDED, COMPLETED FILTERS
 // ======================================================
 
 class MyEventsPage extends StatefulWidget {
@@ -12,6 +13,246 @@ class MyEventsPage extends StatefulWidget {
 }
 
 class _MyEventsPageState extends State<MyEventsPage> {
+  // ====================================================
+  // LIGHT AND DARK MODE COLORS
+  // ====================================================
+
+  Color get _cardSurface => Theme.of(context).colorScheme.surface;
+
+  Color get _primaryText => Theme.of(context).colorScheme.onSurface;
+
+  Color get _secondaryText => Theme.of(context).colorScheme.onSurfaceVariant;
+
+  Color get _cardBorder => Theme.of(context).colorScheme.outlineVariant;
+
+  bool get _isDarkMode => Theme.of(context).brightness == Brightness.dark;
+
+  // ====================================================
+  // EVENT FILTERS
+  // ====================================================
+
+  String selectedFilter = 'All';
+
+  static const List<String> filters = [
+    'All',
+    'Upcoming',
+    'Attended',
+    'Completed',
+  ];
+
+  // ====================================================
+  // PARSE EVENT DATE
+  // Supports:
+  // October 15, 2026
+  // Oct 15, 2026
+  // 2026-10-15
+  // ====================================================
+
+  DateTime? _parseEventDate(String rawDate) {
+    final value = rawDate.trim();
+
+    if (value.isEmpty) return null;
+
+    final isoDate = DateTime.tryParse(value);
+
+    if (isoDate != null) {
+      return DateTime(isoDate.year, isoDate.month, isoDate.day);
+    }
+
+    final match = RegExp(
+      r'^([A-Za-z]+)\.?\s+(\d{1,2}),?\s+(\d{4})$',
+      caseSensitive: false,
+    ).firstMatch(value);
+
+    if (match == null) return null;
+
+    const months = <String, int>{
+      'jan': 1,
+      'january': 1,
+      'feb': 2,
+      'february': 2,
+      'mar': 3,
+      'march': 3,
+      'apr': 4,
+      'april': 4,
+      'may': 5,
+      'jun': 6,
+      'june': 6,
+      'jul': 7,
+      'july': 7,
+      'aug': 8,
+      'august': 8,
+      'sep': 9,
+      'sept': 9,
+      'september': 9,
+      'oct': 10,
+      'october': 10,
+      'nov': 11,
+      'november': 11,
+      'dec': 12,
+      'december': 12,
+    };
+
+    final month = months[match.group(1)!.toLowerCase()];
+    final day = int.tryParse(match.group(2)!);
+    final year = int.tryParse(match.group(3)!);
+
+    if (month == null || day == null || year == null) {
+      return null;
+    }
+
+    final parsed = DateTime(year, month, day);
+
+    if (parsed.year != year || parsed.month != month || parsed.day != day) {
+      return null;
+    }
+
+    return parsed;
+  }
+
+  // ====================================================
+  // FILTER REGISTERED EVENTS
+  // ====================================================
+
+  List<Event> _getFilteredEvents() {
+    final now = DateTime.now();
+
+    final today = DateTime(now.year, now.month, now.day);
+
+    return registeredEvents.where((event) {
+      final key = eventKey(event);
+      final attendance = attendanceStatus[key] ?? 'Not Recorded';
+
+      final eventDate = _parseEventDate(event.date);
+
+      switch (selectedFilter) {
+        case 'Upcoming':
+          // Include today and future events.
+          return eventDate != null && !eventDate.isBefore(today);
+
+        case 'Attended':
+          // Attendance must be marked Present.
+          return attendance == 'Present';
+
+        case 'Completed':
+          // Event date has already passed.
+          return eventDate != null && eventDate.isBefore(today);
+
+        case 'All':
+        default:
+          return true;
+      }
+    }).toList();
+  }
+
+  // ====================================================
+  // FILTER SECTION
+  // ====================================================
+
+  Widget _buildEventFilters() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+      color: Theme.of(context).scaffoldBackgroundColor,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Filter My Events',
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
+          ),
+
+          const SizedBox(height: 10),
+
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: filters.map((filter) {
+                final isSelected = selectedFilter == filter;
+
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: ChoiceChip(
+                    label: Text(filter),
+                    selected: isSelected,
+                    showCheckmark: false,
+                    selectedColor: navy,
+                    backgroundColor: Theme.of(context).colorScheme.surface,
+                    side: BorderSide(color: isSelected ? navy : borderColor),
+                    shape: const StadiumBorder(),
+                    labelStyle: TextStyle(
+                      color: isSelected
+                          ? Colors.white
+                          : Theme.of(context).colorScheme.onSurface,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                    onSelected: (_) {
+                      setState(() {
+                        selectedFilter = filter;
+                      });
+                    },
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ====================================================
+  // EMPTY STATE MESSAGES
+  // ====================================================
+
+  String _emptyTitle() {
+    if (registeredEvents.isEmpty) {
+      return 'No registered events yet';
+    }
+
+    switch (selectedFilter) {
+      case 'Upcoming':
+        return 'No upcoming events';
+
+      case 'Attended':
+        return 'No attended events yet';
+
+      case 'Completed':
+        return 'No completed events yet';
+
+      default:
+        return 'No registered events yet';
+    }
+  }
+
+  String _emptyMessage() {
+    if (registeredEvents.isEmpty) {
+      return 'Register for an event and it will appear here.';
+    }
+
+    switch (selectedFilter) {
+      case 'Upcoming':
+        return 'You have no registered events '
+            'scheduled for today or a future date.';
+
+      case 'Attended':
+        return 'Events with recorded attendance '
+            'will appear here.';
+
+      case 'Completed':
+        return 'Registered events with past '
+            'dates will appear here.';
+
+      default:
+        return 'Register for an event and it will appear here.';
+    }
+  }
+
+  // ====================================================
+  // CANCEL REGISTRATION
+  // ====================================================
+
   Future<void> cancelRegistration(Event event) async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -24,7 +265,8 @@ class _MyEventsPageState extends State<MyEventsPage> {
           ),
           title: const Text('Cancel registration?'),
           content: Text(
-            'Are you sure you want to cancel your registration for ${event.title}?',
+            'Are you sure you want to cancel your '
+            'registration for ${event.title}?',
           ),
           actions: [
             TextButton(
@@ -55,8 +297,13 @@ class _MyEventsPageState extends State<MyEventsPage> {
     });
 
     if (!mounted) return;
+
     showMessage(context, 'Registration cancelled.');
   }
+
+  // ====================================================
+  // EVENT ICON
+  // ====================================================
 
   IconData _eventIcon(Event event) {
     final title = event.title.toLowerCase();
@@ -74,41 +321,60 @@ class _MyEventsPageState extends State<MyEventsPage> {
     return Icons.confirmation_num_rounded;
   }
 
+  // ====================================================
+  // ATTENDANCE COLORS
+  // ====================================================
+
   Color _attendanceColor(String status) {
     switch (status) {
       case 'Present':
-        return const Color(0xFF27834A);
+        return _isDarkMode ? const Color(0xFF78E6A0) : const Color(0xFF27834A);
+
       case 'Absent':
-        return Colors.red;
+        return _isDarkMode ? const Color(0xFFFF9696) : Colors.red;
+
       default:
-        return textGrey;
+        return _secondaryText;
     }
   }
 
   Color _attendanceBg(String status) {
     switch (status) {
       case 'Present':
-        return const Color(0xFFEAF7EE);
+        return _isDarkMode ? const Color(0xFF183C2A) : const Color(0xFFEAF7EE);
+
       case 'Absent':
-        return const Color(0xFFFFECEC);
+        return _isDarkMode ? const Color(0xFF452629) : const Color(0xFFFFECEC);
+
       default:
-        return const Color(0xFFF4F6F9);
+        return _isDarkMode ? const Color(0xFF293445) : const Color(0xFFF4F6F9);
     }
   }
+
+  // ====================================================
+  // ATTENDANCE LABEL
+  // ====================================================
 
   String _attendanceLabel(String status, String? time) {
     if (status == 'Present' && time != null && time.isNotEmpty) {
       return 'Present • $time';
     }
+
     if (status == 'Absent' && time != null && time.isNotEmpty) {
       return 'Absent • $time';
     }
+
     return status;
   }
+
+  // ====================================================
+  // HEADER
+  // ====================================================
 
   Widget _sectionHeader() {
     final presentCount = registeredEvents.where((event) {
       final key = eventKey(event);
+
       return attendanceStatus[key] == 'Present';
     }).length;
 
@@ -131,12 +397,17 @@ class _MyEventsPageState extends State<MyEventsPage> {
               letterSpacing: -0.4,
             ),
           ),
+
           const SizedBox(height: 6),
+
           const Text(
-            'Manage your registrations, attendance, and evaluation status.',
+            'Manage your registrations, attendance, '
+            'and evaluation status.',
             style: TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
           ),
+
           const SizedBox(height: 16),
+
           Row(
             children: [
               Expanded(
@@ -146,7 +417,9 @@ class _MyEventsPageState extends State<MyEventsPage> {
                   value: '${registeredEvents.length}',
                 ),
               ),
+
               const SizedBox(width: 10),
+
               Expanded(
                 child: _summaryCard(
                   icon: Icons.verified_rounded,
@@ -160,6 +433,10 @@ class _MyEventsPageState extends State<MyEventsPage> {
       ),
     );
   }
+
+  // ====================================================
+  // SUMMARY CARD
+  // ====================================================
 
   Widget _summaryCard({
     required IconData icon,
@@ -184,7 +461,9 @@ class _MyEventsPageState extends State<MyEventsPage> {
             ),
             child: Icon(icon, color: yellow),
           ),
+
           const SizedBox(width: 12),
+
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -207,69 +486,9 @@ class _MyEventsPageState extends State<MyEventsPage> {
     );
   }
 
-  Widget _developerTestMode(Event event, String key) {
-    final currentStatus = attendanceStatus[key] ?? 'Not Recorded';
-
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFFAEC),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFF3D36B)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Row(
-            children: [
-              Icon(Icons.science_outlined, color: Color(0xFFE38A00), size: 18),
-              SizedBox(width: 6),
-              Text(
-                'DEVELOPER TEST MODE',
-                style: TextStyle(
-                  color: Color(0xFFE38A00),
-                  fontWeight: FontWeight.w900,
-                  fontSize: 12.5,
-                  letterSpacing: 0.2,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          DropdownButtonFormField<String>(
-            initialValue: currentStatus,
-            decoration: const InputDecoration(
-              labelText: 'Simulate Attendance',
-              prefixIcon: Icon(Icons.fact_check_outlined),
-            ),
-            items: const [
-              DropdownMenuItem(
-                value: 'Not Recorded',
-                child: Text('Not Recorded'),
-              ),
-              DropdownMenuItem(value: 'Present', child: Text('Present')),
-              DropdownMenuItem(value: 'Absent', child: Text('Absent')),
-            ],
-            onChanged: (value) {
-              if (value == null) return;
-
-              setState(() {
-                if (value == 'Not Recorded') {
-                  attendanceStatus.remove(key);
-                  attendanceCheckInTime.remove(key);
-                } else {
-                  attendanceStatus[key] = value;
-                  attendanceCheckInTime[key] = formatCheckInTime(
-                    DateTime.now(),
-                  );
-                }
-              });
-            },
-          ),
-        ],
-      ),
-    );
-  }
+  // ====================================================
+  // REUSABLE ACTION BUTTON
+  // ====================================================
 
   Widget _actionButton({
     required VoidCallback? onPressed,
@@ -298,18 +517,26 @@ class _MyEventsPageState extends State<MyEventsPage> {
     );
   }
 
+  // ====================================================
+  // REGISTERED EVENT CARD
+  // ====================================================
+
   Widget _buildEventCard(Event event) {
     final key = eventKey(event);
+
     final status = attendanceStatus[key] ?? 'Not Recorded';
+
     final checkInTime = attendanceCheckInTime[key];
+
     final canEvaluate = status == 'Present';
     final canCancel = status != 'Present';
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: _cardSurface,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: borderColor),
+        border: Border.all(color: _cardBorder),
+
         boxShadow: [
           BoxShadow(
             color: navy.withValues(alpha: 0.045),
@@ -322,7 +549,9 @@ class _MyEventsPageState extends State<MyEventsPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // TOP INFO
+          // ============================================
+          // EVENT INFORMATION
+          // ============================================
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -335,27 +564,33 @@ class _MyEventsPageState extends State<MyEventsPage> {
                 ),
                 child: Icon(_eventIcon(event), color: yellow, size: 30),
               ),
+
               const SizedBox(width: 13),
+
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       event.title,
-                      style: const TextStyle(
-                        color: textDark,
+
+                      style: TextStyle(
+                        color: _primaryText,
                         fontSize: 16.8,
                         fontWeight: FontWeight.w800,
                         height: 1.2,
                       ),
                     ),
+
                     const SizedBox(height: 6),
+
                     Text(
                       '${event.date} • ${event.venue}',
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: textGrey,
+
+                      style: TextStyle(
+                        color: _secondaryText,
                         fontSize: 13,
                         height: 1.35,
                       ),
@@ -363,7 +598,9 @@ class _MyEventsPageState extends State<MyEventsPage> {
                   ],
                 ),
               ),
+
               const SizedBox(width: 8),
+
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 10,
@@ -387,7 +624,9 @@ class _MyEventsPageState extends State<MyEventsPage> {
 
           const SizedBox(height: 14),
 
-          // ATTENDANCE STATUS CHIP
+          // ============================================
+          // ATTENDANCE STATUS
+          // ============================================
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
@@ -407,7 +646,9 @@ class _MyEventsPageState extends State<MyEventsPage> {
                   size: 18,
                   color: _attendanceColor(status),
                 ),
+
                 const SizedBox(width: 8),
+
                 Expanded(
                   child: Text(
                     _attendanceLabel(status, checkInTime),
@@ -422,14 +663,11 @@ class _MyEventsPageState extends State<MyEventsPage> {
             ),
           ),
 
-          const SizedBox(height: 14),
-
-          // DEVELOPER TEST MODE
-          _developerTestMode(event, key),
-
           const SizedBox(height: 16),
 
-          // ACTION BUTTONS
+          // ============================================
+          // EVALUATE EVENT
+          // ============================================
           _actionButton(
             onPressed: canEvaluate
                 ? () {
@@ -445,6 +683,9 @@ class _MyEventsPageState extends State<MyEventsPage> {
 
           const SizedBox(height: 10),
 
+          // ============================================
+          // VIEW QR PASS
+          // ============================================
           _actionButton(
             onPressed: () {
               Navigator.push(
@@ -458,6 +699,9 @@ class _MyEventsPageState extends State<MyEventsPage> {
 
           const SizedBox(height: 10),
 
+          // ============================================
+          // CANCEL REGISTRATION
+          // ============================================
           if (canCancel)
             _actionButton(
               onPressed: () => cancelRegistration(event),
@@ -474,7 +718,7 @@ class _MyEventsPageState extends State<MyEventsPage> {
               label: const Text('Cancellation Unavailable'),
               style: OutlinedButton.styleFrom(
                 foregroundColor: textGrey,
-                side: const BorderSide(color: borderColor),
+                side: BorderSide(color: _cardBorder),
               ),
             ),
 
@@ -482,10 +726,13 @@ class _MyEventsPageState extends State<MyEventsPage> {
 
           Text(
             canCancel
-                ? 'You may cancel while attendance has not yet been recorded.'
-                : 'Cancellation is unavailable because attendance has already been recorded.',
-            style: const TextStyle(
-              color: textGrey,
+                ? 'You may cancel while attendance '
+                      'has not yet been recorded.'
+                : 'Cancellation is unavailable because '
+                      'attendance has already been recorded.',
+
+            style: TextStyle(
+              color: _secondaryText,
               fontSize: 12.5,
               height: 1.4,
             ),
@@ -495,35 +742,46 @@ class _MyEventsPageState extends State<MyEventsPage> {
     );
   }
 
+  // ====================================================
+  // MAIN PAGE
+  // ====================================================
+
   @override
   Widget build(BuildContext context) {
+    final filteredEvents = _getFilteredEvents();
+
     return Scaffold(
       body: Column(
         children: [
+          // HEADER
           _sectionHeader(),
+
+          // NEW EVENT FILTERS
+          _buildEventFilters(),
+
+          // FILTERED EVENT LIST
           Expanded(
             child: AnimatedSwitcher(
               duration: const Duration(milliseconds: 300),
-              child: registeredEvents.isEmpty
-                  ? const Center(
-                      key: ValueKey('empty'),
+              child: filteredEvents.isEmpty
+                  ? Center(
+                      key: ValueKey('empty-$selectedFilter'),
                       child: Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 24),
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
                         child: EmptyState(
                           icon: Icons.event_busy_rounded,
-                          title: 'No registered events yet',
-                          message:
-                              'Register for an event and it will appear here.',
+                          title: _emptyTitle(),
+                          message: _emptyMessage(),
                         ),
                       ),
                     )
                   : ListView.separated(
-                      key: const ValueKey('events'),
+                      key: ValueKey('events-$selectedFilter'),
                       padding: const EdgeInsets.fromLTRB(16, 16, 16, 26),
-                      itemCount: registeredEvents.length,
+                      itemCount: filteredEvents.length,
                       separatorBuilder: (_, _) => const SizedBox(height: 14),
                       itemBuilder: (context, index) {
-                        final event = registeredEvents[index];
+                        final event = filteredEvents[index];
 
                         return TweenAnimationBuilder<double>(
                           tween: Tween(begin: 0, end: 1),

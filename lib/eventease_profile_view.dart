@@ -1,8 +1,10 @@
+
 import 'package:flutter/material.dart';
 import 'app_theme_controller.dart';
 
 // ======================================================
 // TMC EVENTEASE - ENHANCED PROFILE UI
+// FIXED DARK MODE AND REMOVED EXTRA EDIT BUTTON
 // ======================================================
 
 class EventEaseProfileView extends StatelessWidget {
@@ -35,9 +37,10 @@ class EventEaseProfileView extends StatelessWidget {
   static const Color _navy = Color(0xFF0E3062);
   static const Color _blue = Color(0xFF194E91);
   static const Color _yellow = Color(0xFFFFCA40);
+  static const Color _lightBlue = Color(0xFFAED4FF);
 
   // ====================================================
-  // THEME COLORS
+  // LIGHT AND DARK MODE COLORS
   // ====================================================
 
   bool _isDark(BuildContext context) {
@@ -45,19 +48,38 @@ class EventEaseProfileView extends StatelessWidget {
   }
 
   Color _surface(BuildContext context) {
-    return _isDark(context) ? const Color(0xFF19283D) : Colors.white;
+    return _isDark(context)
+        ? const Color(0xFF19283D)
+        : Colors.white;
   }
 
   Color _heading(BuildContext context) {
-    return _isDark(context) ? const Color(0xFFF0F5FF) : const Color(0xFF12233F);
+    return _isDark(context)
+        ? const Color(0xFFF0F5FF)
+        : const Color(0xFF12233F);
   }
 
   Color _secondary(BuildContext context) {
-    return _isDark(context) ? const Color(0xFFACBBD1) : const Color(0xFF73829A);
+    return _isDark(context)
+        ? const Color(0xFFACBBD1)
+        : const Color(0xFF73829A);
   }
 
   Color _border(BuildContext context) {
-    return _isDark(context) ? const Color(0xFF30445F) : const Color(0xFFE1E8F2);
+    return _isDark(context)
+        ? const Color(0xFF30445F)
+        : const Color(0xFFE1E8F2);
+  }
+
+  Color _iconColor(
+      BuildContext context, {
+        required bool yellowIcon,
+      }) {
+    if (_isDark(context)) {
+      return yellowIcon ? _yellow : _lightBlue;
+    }
+
+    return yellowIcon ? _navy : _blue;
   }
 
   // ====================================================
@@ -65,9 +87,11 @@ class EventEaseProfileView extends StatelessWidget {
   // ====================================================
 
   Widget _profileBanner(BuildContext context) {
-    final displayName = name.trim().isEmpty ? 'TMC Student' : name.trim();
+    final displayName =
+    name.trim().isEmpty ? 'TMC Student' : name.trim();
 
-    final studentCourse = course.trim().isEmpty ? 'TMC Student' : course.trim();
+    final studentCourse =
+    course.trim().isEmpty ? 'TMC Student' : course.trim();
 
     final studentYear = year.trim();
 
@@ -76,7 +100,11 @@ class EventEaseProfileView extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [_navy, _blue, Color(0xFF10376E)],
+          colors: [
+            _navy,
+            _blue,
+            Color(0xFF10376E),
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -121,60 +149,41 @@ class EventEaseProfileView extends StatelessWidget {
             padding: const EdgeInsets.all(21),
             child: Row(
               children: [
-                // ------------------------------------
+                // ====================================
                 // PROFILE AVATAR
-                // ------------------------------------
-                Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    Container(
-                      width: 91,
-                      height: 91,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white.withValues(alpha: 0.13),
-                        border: Border.all(color: Colors.white38, width: 2),
-                      ),
-                      child: const Icon(
-                        Icons.person_rounded,
-                        color: _yellow,
-                        size: 60,
-                      ),
-                    ),
+                // EXTRA EDIT BUTTON REMOVED
+                // ====================================
 
-                    Positioned(
-                      right: -3,
-                      bottom: -3,
-                      child: Material(
-                        color: Colors.white,
-                        shape: const CircleBorder(),
-                        child: IconButton(
-                          tooltip: 'Edit profile',
-                          icon: const Icon(
-                            Icons.edit_rounded,
-                            size: 18,
-                            color: _navy,
-                          ),
-                          onPressed: onEdit,
-                          constraints: const BoxConstraints(
-                            minWidth: 35,
-                            minHeight: 35,
-                          ),
-                          padding: const EdgeInsets.all(7),
-                        ),
-                      ),
+                Container(
+                  width: 91,
+                  height: 91,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white.withValues(
+                      alpha: 0.13,
                     ),
-                  ],
+                    border: Border.all(
+                      color: Colors.white38,
+                      width: 2,
+                    ),
+                  ),
+                  child: const Icon(
+                    Icons.person_rounded,
+                    color: _yellow,
+                    size: 60,
+                  ),
                 ),
 
                 const SizedBox(width: 18),
 
-                // ------------------------------------
+                // ====================================
                 // STUDENT NAME AND PROGRAM
-                // ------------------------------------
+                // ====================================
+
                 Expanded(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment:
+                    CrossAxisAlignment.start,
                     children: [
                       const Text(
                         'TMC EVENTEASE',
@@ -208,8 +217,11 @@ class EventEaseProfileView extends StatelessWidget {
                           vertical: 7,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.14),
-                          borderRadius: BorderRadius.circular(20),
+                          color: Colors.white.withValues(
+                            alpha: 0.14,
+                          ),
+                          borderRadius:
+                          BorderRadius.circular(20),
                         ),
                         child: Text(
                           studentYear.isEmpty
@@ -251,10 +263,10 @@ class EventEaseProfileView extends StatelessWidget {
   // ====================================================
 
   Widget _sectionTitle(
-    BuildContext context,
-    String title, {
-    bool showEdit = false,
-  }) {
+      BuildContext context,
+      String title, {
+        bool showEdit = false,
+      }) {
     return Row(
       children: [
         Expanded(
@@ -268,17 +280,28 @@ class EventEaseProfileView extends StatelessWidget {
           ),
         ),
 
+        // Only Edit Profile button to keep.
         if (showEdit)
           TextButton.icon(
             onPressed: onEdit,
-            icon: const Icon(Icons.edit_outlined, size: 17),
+            icon: const Icon(
+              Icons.edit_outlined,
+              size: 17,
+            ),
             label: const Text('Edit Profile'),
             style: TextButton.styleFrom(
-              foregroundColor: _isDark(context) ? _yellow : _navy,
+              foregroundColor:
+              _isDark(context) ? _yellow : _navy,
               backgroundColor: _isDark(context)
                   ? const Color(0xFF243B5C)
                   : const Color(0xFFE7F0FF),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 9,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(25),
+              ),
             ),
           ),
       ],
@@ -287,18 +310,25 @@ class EventEaseProfileView extends StatelessWidget {
 
   // ====================================================
   // ACCOUNT INFORMATION TILE
+  // DARK ICON COLORS FIXED
   // ====================================================
 
   Widget _infoTile(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    required String value,
-    required bool yellowIcon,
-  }) {
-    final iconBackground = _isDark(context)
-        ? (yellowIcon ? const Color(0xFF423825) : const Color(0xFF233F65))
-        : (yellowIcon ? const Color(0xFFFFF2D0) : const Color(0xFFE6F0FF));
+      BuildContext context, {
+        required IconData icon,
+        required String title,
+        required String value,
+        required bool yellowIcon,
+      }) {
+    final dark = _isDark(context);
+
+    final iconBackground = dark
+        ? (yellowIcon
+        ? const Color(0xFF423825)
+        : const Color(0xFF233F65))
+        : (yellowIcon
+        ? const Color(0xFFFFF2D0)
+        : const Color(0xFFE6F0FF));
 
     return Container(
       margin: const EdgeInsets.only(bottom: 11),
@@ -310,7 +340,7 @@ class EventEaseProfileView extends StatelessWidget {
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(
-              alpha: _isDark(context) ? 0.07 : 0.035,
+              alpha: dark ? 0.07 : 0.035,
             ),
             blurRadius: 13,
             offset: const Offset(0, 4),
@@ -319,6 +349,7 @@ class EventEaseProfileView extends StatelessWidget {
       ),
       child: Row(
         children: [
+          // ICON
           Container(
             width: 53,
             height: 53,
@@ -328,13 +359,17 @@ class EventEaseProfileView extends StatelessWidget {
             ),
             child: Icon(
               icon,
-              color: yellowIcon && _isDark(context) ? _yellow : _navy,
+              color: _iconColor(
+                context,
+                yellowIcon: yellowIcon,
+              ),
               size: 26,
             ),
           ),
 
           const SizedBox(width: 15),
 
+          // INFORMATION
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -351,7 +386,9 @@ class EventEaseProfileView extends StatelessWidget {
                 const SizedBox(height: 5),
 
                 Text(
-                  value.trim().isEmpty ? 'Not provided' : value,
+                  value.trim().isEmpty
+                      ? 'Not provided'
+                      : value,
                   style: TextStyle(
                     color: _heading(context),
                     fontSize: 14,
@@ -367,14 +404,17 @@ class EventEaseProfileView extends StatelessWidget {
   }
 
   // ====================================================
-  // LIGHT / DARK MODE SETTING
+  // LIGHT AND DARK MODE SETTING
   // ====================================================
 
   Widget _appearanceSetting(BuildContext context) {
     final darkMode = _isDark(context);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 13),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 15,
+        vertical: 13,
+      ),
       decoration: BoxDecoration(
         color: _surface(context),
         borderRadius: BorderRadius.circular(20),
@@ -392,7 +432,9 @@ class EventEaseProfileView extends StatelessWidget {
               borderRadius: BorderRadius.circular(15),
             ),
             child: Icon(
-              darkMode ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+              darkMode
+                  ? Icons.dark_mode_rounded
+                  : Icons.light_mode_rounded,
               color: darkMode ? _yellow : _navy,
               size: 26,
             ),
@@ -419,7 +461,10 @@ class EventEaseProfileView extends StatelessWidget {
                   darkMode
                       ? 'Dark appearance enabled'
                       : 'Light appearance enabled',
-                  style: TextStyle(color: _secondary(context), fontSize: 12),
+                  style: TextStyle(
+                    color: _secondary(context),
+                    fontSize: 12,
+                  ),
                 ),
               ],
             ),
@@ -440,9 +485,12 @@ class EventEaseProfileView extends StatelessWidget {
 
   // ====================================================
   // RESET PASSWORD SETTING
+  // DARK MODE ICON FIXED
   // ====================================================
 
   Widget _passwordSetting(BuildContext context) {
+    final dark = _isDark(context);
+
     return Material(
       color: _surface(context),
       borderRadius: BorderRadius.circular(20),
@@ -461,14 +509,14 @@ class EventEaseProfileView extends StatelessWidget {
                 width: 51,
                 height: 51,
                 decoration: BoxDecoration(
-                  color: _isDark(context)
+                  color: dark
                       ? const Color(0xFF253E60)
                       : const Color(0xFFE6F0FF),
                   borderRadius: BorderRadius.circular(15),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.lock_outline_rounded,
-                  color: _blue,
+                  color: dark ? _lightBlue : _blue,
                   size: 26,
                 ),
               ),
@@ -501,7 +549,10 @@ class EventEaseProfileView extends StatelessWidget {
                 ),
               ),
 
-              Icon(Icons.chevron_right_rounded, color: _secondary(context)),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: _secondary(context),
+              ),
             ],
           ),
         ),
@@ -523,34 +574,28 @@ class EventEaseProfileView extends StatelessWidget {
           : const Color(0xFFF5F8FC),
 
       appBar: AppBar(
-        backgroundColor: _navy,
-        foregroundColor: Colors.white,
-        title: const Text(
-          'Profile',
-          style: TextStyle(fontWeight: FontWeight.w800),
-        ),
-        actions: [
-          IconButton(
-            tooltip: 'Edit Profile',
-            onPressed: onEdit,
-            icon: const Icon(Icons.edit_outlined),
-          ),
-          const SizedBox(width: 8),
-        ],
+        title: const Text('Profile'),
+        // No extra pencil icon in the AppBar.
       ),
 
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(17, 20, 17, 28),
+        padding: const EdgeInsets.fromLTRB(
+          17, 20, 17, 28,
+        ),
         children: [
           Center(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 650),
+              constraints: const BoxConstraints(
+                maxWidth: 650,
+              ),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment:
+                CrossAxisAlignment.start,
                 children: [
                   // ==================================
                   // PROFILE BANNER
                   // ==================================
+
                   _profileBanner(context),
 
                   const SizedBox(height: 29),
@@ -558,7 +603,12 @@ class EventEaseProfileView extends StatelessWidget {
                   // ==================================
                   // ACCOUNT INFORMATION
                   // ==================================
-                  _sectionTitle(context, 'Account Information', showEdit: true),
+
+                  _sectionTitle(
+                    context,
+                    'Account Information',
+                    showEdit: true,
+                  ),
 
                   const SizedBox(height: 13),
 
@@ -615,7 +665,11 @@ class EventEaseProfileView extends StatelessWidget {
                   // ==================================
                   // APPEARANCE SETTINGS
                   // ==================================
-                  _sectionTitle(context, 'Appearance'),
+
+                  _sectionTitle(
+                    context,
+                    'Appearance',
+                  ),
 
                   const SizedBox(height: 13),
 
@@ -626,7 +680,11 @@ class EventEaseProfileView extends StatelessWidget {
                   // ==================================
                   // ACCOUNT SETTINGS
                   // ==================================
-                  _sectionTitle(context, 'Account Settings'),
+
+                  _sectionTitle(
+                    context,
+                    'Account Settings',
+                  ),
 
                   const SizedBox(height: 13),
 
@@ -637,15 +695,20 @@ class EventEaseProfileView extends StatelessWidget {
                   // ==================================
                   // LOGOUT
                   // ==================================
+
                   SizedBox(
                     width: double.infinity,
                     height: 53,
                     child: OutlinedButton.icon(
                       onPressed: onLogout,
-                      icon: const Icon(Icons.logout_rounded),
+                      icon: const Icon(
+                        Icons.logout_rounded,
+                      ),
                       label: const Text(
                         'Logout',
-                        style: TextStyle(fontWeight: FontWeight.w800),
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: darkMode
@@ -657,7 +720,8 @@ class EventEaseProfileView extends StatelessWidget {
                               : const Color(0xFFF0CECE),
                         ),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius:
+                          BorderRadius.circular(16),
                         ),
                       ),
                     ),

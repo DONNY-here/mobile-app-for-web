@@ -32,29 +32,22 @@ class _RegisterPageState extends State<RegisterPage> {
 
   bool hidePassword = true;
 
+  // ======================================================
+  // PASSWORD STRENGTH VALIDATION
+  // ======================================================
 
-// ======================================================
-// PASSWORD STRENGTH VALIDATION
-// ======================================================
+  bool hasMinLength(String password) => password.length >= 8;
 
-  bool hasMinLength(String password) =>
-      password.length >= 8;
+  bool hasUppercase(String password) => RegExp(r'[A-Z]').hasMatch(password);
 
-  bool hasUppercase(String password) =>
-      RegExp(r'[A-Z]').hasMatch(password);
+  bool hasLowercase(String password) => RegExp(r'[a-z]').hasMatch(password);
 
-  bool hasLowercase(String password) =>
-      RegExp(r'[a-z]').hasMatch(password);
-
-  bool hasNumber(String password) =>
-      RegExp(r'[0-9]').hasMatch(password);
+  bool hasNumber(String password) => RegExp(r'[0-9]').hasMatch(password);
 
   bool hasSpecialCharacter(String password) =>
-      RegExp(
-        r'[!@#$%^&*(),.?":{}|<>_\-+=]',
-      ).hasMatch(password);
+      RegExp(r'[!@#$%^&*(),.?":{}|<>_\-+=]').hasMatch(password);
 
-// Count satisfied requirements.
+  // Count satisfied requirements.
   int passwordStrength(String password) {
     int strength = 0;
 
@@ -67,12 +60,12 @@ class _RegisterPageState extends State<RegisterPage> {
     return strength;
   }
 
-// All five requirements must be satisfied.
+  // All five requirements must be satisfied.
   bool isStrongPassword(String password) {
     return passwordStrength(password) == 5;
   }
 
-// Strength indicator color.
+  // Strength indicator color.
   Color strengthColor(int strength) {
     if (strength == 5) {
       return Colors.green;
@@ -85,7 +78,7 @@ class _RegisterPageState extends State<RegisterPage> {
     return Colors.red;
   }
 
-// Strength indicator label.
+  // Strength indicator label.
   String strengthLabel(int strength) {
     if (strength == 5) {
       return 'Strong';
@@ -98,11 +91,8 @@ class _RegisterPageState extends State<RegisterPage> {
     return 'Weak';
   }
 
-// Reusable requirement indicator.
-  Widget passwordRequirement(
-      String title,
-      bool isPassed,
-      ) {
+  // Reusable requirement indicator.
+  Widget passwordRequirement(String title, bool isPassed) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 5),
       child: Row(
@@ -126,7 +116,6 @@ class _RegisterPageState extends State<RegisterPage> {
       ),
     );
   }
-
 
   // ====================================================
   // TMC DEPARTMENTS AND COURSES
@@ -184,21 +173,19 @@ class _RegisterPageState extends State<RegisterPage> {
       return;
     }
 
-
-// ======================================================
-// PASSWORD SECURITY STANDARD
-// ======================================================
+    // ======================================================
+    // PASSWORD SECURITY STANDARD
+    // ======================================================
 
     if (!isStrongPassword(password)) {
       showMessage(
         context,
         'Password must contain at least 8 characters, '
-            'uppercase and lowercase letters, '
-            'a number, and a special character.',
+        'uppercase and lowercase letters, '
+        'a number, and a special character.',
       );
       return;
     }
-
 
     // ==================================================
     // CLEAR PREVIOUS LOCAL STUDENT DATA
@@ -525,35 +512,27 @@ class _RegisterPageState extends State<RegisterPage> {
 
                         const SizedBox(height: 14),
 
-
                         // ==================================
                         // BLOCK - MANUAL TEXT INPUT
                         // ==================================
-
                         TextField(
                           keyboardType: TextInputType.text,
-                          textCapitalization:
-                          TextCapitalization.characters,
+                          textCapitalization: TextCapitalization.characters,
                           decoration: const InputDecoration(
                             labelText: 'Block',
                             hintText: 'Enter your Block (e.g. 1)',
-                            prefixIcon: Icon(
-                              Icons.groups_rounded,
-                            ),
+                            prefixIcon: Icon(Icons.groups_rounded),
                           ),
                           onChanged: (value) {
                             selectedBlock = value.trim();
                           },
                         ),
 
-
                         const SizedBox(height: 14),
 
-
-// ======================================================
-// PASSWORD INPUT WITH LIVE STRENGTH INDICATOR
-// ======================================================
-
+                        // ======================================================
+                        // PASSWORD INPUT WITH LIVE STRENGTH INDICATOR
+                        // ======================================================
                         TextField(
                           controller: passwordController,
                           obscureText: hidePassword,
@@ -565,9 +544,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
                           decoration: InputDecoration(
                             labelText: 'Password',
-                            prefixIcon: const Icon(
-                              Icons.lock_outline,
-                            ),
+                            prefixIcon: const Icon(Icons.lock_outline),
 
                             suffixIcon: IconButton(
                               onPressed: () {
@@ -586,17 +563,17 @@ class _RegisterPageState extends State<RegisterPage> {
 
                         const SizedBox(height: 12),
 
-// ======================================================
-// PASSWORD REQUIREMENTS
-// ======================================================
-
+                        // ======================================================
+                        // PASSWORD REQUIREMENTS
+                        // ======================================================
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             // Show strength only when the user starts typing.
                             if (passwordController.text.isNotEmpty) ...[
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   const Text(
                                     'Password Strength',
@@ -609,9 +586,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
                                   Text(
                                     strengthLabel(
-                                      passwordStrength(
-                                        passwordController.text,
-                                      ),
+                                      passwordStrength(passwordController.text),
                                     ),
                                     style: TextStyle(
                                       fontSize: 13,
@@ -631,7 +606,6 @@ class _RegisterPageState extends State<RegisterPage> {
                               // ================================================
                               // STRENGTH PROGRESS BAR
                               // ================================================
-
                               Row(
                                 children: List.generate(5, (index) {
                                   final strength = passwordStrength(
@@ -697,7 +671,6 @@ class _RegisterPageState extends State<RegisterPage> {
                             // ================================================
                             // PASSWORD APPROVED MESSAGE
                             // ================================================
-
                             if (isStrongPassword(passwordController.text))
                               const Padding(
                                 padding: EdgeInsets.only(top: 8),

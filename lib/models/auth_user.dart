@@ -1,4 +1,3 @@
-
 class AuthUser {
   final String id;
   final String name;
@@ -14,8 +13,7 @@ class AuthUser {
 
   bool get isStudent => role == 'student';
 
-  bool get isScanner =>
-      role == 'scanner' || role == 'admin';
+  bool get isScanner => role == 'scanner' || role == 'admin';
 
   factory AuthUser.fromJson(Map<String, dynamic> json) {
     return AuthUser(

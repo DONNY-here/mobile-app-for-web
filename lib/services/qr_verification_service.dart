@@ -1,4 +1,3 @@
-
 import '../models/qr_verification_result.dart';
 
 class QrVerificationService {
@@ -22,19 +21,15 @@ class QrVerificationService {
     required String eventTitle,
   }) async {
     // Simulate network processing.
-    await Future<void>.delayed(
-      const Duration(milliseconds: 500),
-    );
+    await Future<void>.delayed(const Duration(milliseconds: 500));
 
     final registrationKey = '$eventId|$token';
 
-    if (token.isEmpty ||
-        !_registrations.containsKey(registrationKey)) {
+    if (token.isEmpty || !_registrations.containsKey(registrationKey)) {
       return const QrVerificationResult(
         success: false,
         status: 'invalid',
-        message:
-        'QR code is not registered for the selected event.',
+        message: 'QR code is not registered for the selected event.',
       );
     }
 
@@ -48,9 +43,7 @@ class QrVerificationService {
         message: 'Attendance has already been recorded.',
         studentName: studentName,
         eventTitle: eventTitle,
-        checkInTime: _formatTime(
-          _attendanceRecords[registrationKey]!,
-        ),
+        checkInTime: _formatTime(_attendanceRecords[registrationKey]!),
       );
     }
 
@@ -68,9 +61,7 @@ class QrVerificationService {
   }
 
   String _formatTime(DateTime time) {
-    final hour = time.hour % 12 == 0
-        ? 12
-        : time.hour % 12;
+    final hour = time.hour % 12 == 0 ? 12 : time.hour % 12;
 
     final minute = time.minute.toString().padLeft(2, '0');
     final period = time.hour >= 12 ? 'PM' : 'AM';

@@ -1,4 +1,3 @@
-
 class Student {
   final String studentId;
   final String fullName;

@@ -3,6 +3,7 @@ part of 'main.dart';
 
 // ======================================================
 // TMC EVENTEASE - ENHANCED PROFILE PAGE
+// LIGHT AND DARK MODE SUPPORTED
 // ======================================================
 
 class ProfilePage extends StatefulWidget {
@@ -21,9 +22,7 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> openEditProfile() async {
     await Navigator.push(
       context,
-      animatedRoute(
-        const EditProfilePage(),
-      ),
+      animatedRoute(const EditProfilePage()),
     );
 
     if (!mounted) return;
@@ -34,50 +33,105 @@ class _ProfilePageState extends State<ProfilePage> {
 
   // ====================================================
   // LOGOUT WITH CONFIRMATION
+  // LIGHT AND DARK MODE SUPPORTED
   // ====================================================
 
   Future<void> logout() async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
+        final theme = Theme.of(dialogContext);
+        final colors = theme.colorScheme;
+
+        final isDark =
+            theme.brightness == Brightness.dark;
+
         return AlertDialog(
-          icon: const Icon(
+          backgroundColor: colors.surface,
+          surfaceTintColor: Colors.transparent,
+
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+
+          // LOGOUT ICON
+          icon: Icon(
             Icons.logout_rounded,
-            color: navy,
-            size: 34,
+            color: isDark ? yellow : navy,
+            size: 36,
           ),
 
-          title: const Text(
+          // DIALOG TITLE
+          title: Text(
             'Logout?',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: colors.onSurface,
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+            ),
           ),
 
-          content: const Text(
+          // CONFIRMATION MESSAGE
+          content: Text(
             'Are you sure you want to end '
                 'your current session?',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: colors.onSurfaceVariant,
+              fontSize: 14,
+              height: 1.5,
+            ),
           ),
+
+          // ACTION BUTTONS
+          actionsAlignment: MainAxisAlignment.center,
 
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.pop(
-                  dialogContext,
-                  false,
-                );
+                Navigator.pop(dialogContext, false);
               },
-              child: const Text('Stay'),
+              style: TextButton.styleFrom(
+                foregroundColor:
+                isDark ? yellow : navy,
+              ),
+              child: const Text(
+                'Stay',
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ),
 
-            FilledButton(
+            FilledButton.icon(
               style: FilledButton.styleFrom(
-                backgroundColor: navy,
+                backgroundColor: isDark
+                    ? const Color(0xFFBF4242)
+                    : navy,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius:
+                  BorderRadius.circular(12),
+                ),
               ),
               onPressed: () {
-                Navigator.pop(
-                  dialogContext,
-                  true,
-                );
+                Navigator.pop(dialogContext, true);
               },
-              child: const Text('Logout'),
+              icon: const Icon(
+                Icons.logout_rounded,
+                size: 18,
+              ),
+              label: const Text(
+                'Logout',
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ),
           ],
         );
@@ -88,7 +142,7 @@ class _ProfilePageState extends State<ProfilePage> {
       return;
     }
 
-    // Keep your existing authentication cleanup,
+    // Preserve the existing authentication cleanup,
     // logout handling and navigation.
     logoutEventEaseUser(context);
   }

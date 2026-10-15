@@ -1,4 +1,3 @@
-
 class TmcDepartments {
   static const List<String> departments = [
     'College of Computer Studies',
@@ -9,19 +8,10 @@ class TmcDepartments {
   ];
 
   static const Map<String, List<String>> programs = {
-    'College of Computer Studies': [
-      'BSIT',
-    ],
-    'College of Education': [
-      'BSED',
-      'BEED',
-    ],
-    'College of Criminal Justice Education': [
-      'BSCRIM',
-    ],
-    'College of Office Administration': [
-      'BSOA',
-    ],
+    'College of Computer Studies': ['BSIT'],
+    'College of Education': ['BSED', 'BEED'],
+    'College of Criminal Justice Education': ['BSCRIM'],
+    'College of Office Administration': ['BSOA'],
     'College of Arts and Sciences': [
       'AB Political Science',
       'AB Communication',

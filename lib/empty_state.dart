@@ -47,10 +47,7 @@ class EmptyState extends StatelessWidget {
           Text(
             message,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: textGrey,
-              height: 1.4,
-            ),
+            style: const TextStyle(color: textGrey, height: 1.4),
           ),
         ],
       ),

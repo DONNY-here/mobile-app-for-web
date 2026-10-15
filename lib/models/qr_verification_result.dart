@@ -1,4 +1,3 @@
-
 class QrVerificationResult {
   final bool success;
   final String status;
@@ -16,9 +15,7 @@ class QrVerificationResult {
     this.checkInTime,
   });
 
-  factory QrVerificationResult.fromJson(
-      Map<String, dynamic> json,
-      ) {
+  factory QrVerificationResult.fromJson(Map<String, dynamic> json) {
     return QrVerificationResult(
       success: json['success'] == true,
       status: json['status'] as String? ?? 'error',

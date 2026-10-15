@@ -4,11 +4,7 @@ class EventDashboardCard extends StatelessWidget {
   final Event event;
   final int delay;
 
-  const EventDashboardCard({
-    super.key,
-    required this.event,
-    this.delay = 0,
-  });
+  const EventDashboardCard({super.key, required this.event, this.delay = 0});
 
   @override
   Widget build(BuildContext context) {
@@ -133,10 +129,7 @@ class EventDashboardCard extends StatelessWidget {
                       color: lightNavy,
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(
-                      Icons.chevron_right_rounded,
-                      color: navy,
-                    ),
+                    child: const Icon(Icons.chevron_right_rounded, color: navy),
                   ),
                 ],
               ),
@@ -223,10 +216,7 @@ class _QuickAccessButtonState extends State<QuickAccessButton> {
                   widget.subtitle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: textGrey,
-                    fontSize: 11.5,
-                  ),
+                  style: const TextStyle(color: textGrey, fontSize: 11.5),
                 ),
               ],
             ),
@@ -293,11 +283,7 @@ class AnnouncementCard extends StatelessWidget {
               ],
             ),
           ),
-          const Icon(
-            Icons.chevron_right_rounded,
-            color: textGrey,
-            size: 20,
-          ),
+          const Icon(Icons.chevron_right_rounded, color: textGrey, size: 20),
         ],
       ),
     );

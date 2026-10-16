@@ -1,8 +1,7 @@
 part of 'main.dart';
 
 // ======================================================
-// TMC EVENTEASE - LOGIN PAGE
-// Supports Demo Mode and Real API Mode
+// TMC EVENTEASE - SCHOOL ID LOGIN PAGE
 // ======================================================
 
 class LoginPage extends StatefulWidget {
@@ -13,12 +12,37 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final emailController = TextEditingController();
+  final schoolIdController = TextEditingController();
   final passwordController = TextEditingController();
 
   bool hidePassword = true;
   bool isLoggingIn = false;
   bool rememberDemoStudent = false;
+
+  // ======================================================
+  // SCHOOL ID FORMATTER
+  // ======================================================
+
+  void formatSchoolId(String value) {
+    String digits = value.replaceAll(RegExp(r'\D'), '');
+
+    if (digits.length > 8) {
+      digits = digits.substring(0, 8);
+    }
+
+    String formatted = digits;
+
+    if (digits.length > 2) {
+      formatted = '${digits.substring(0, 2)}-${digits.substring(2)}';
+    }
+
+    if (schoolIdController.text != formatted) {
+      schoolIdController.value = TextEditingValue(
+        text: formatted,
+        selection: TextSelection.collapsed(offset: formatted.length),
+      );
+    }
+  }
 
   // ======================================================
   // LOGIN USER
@@ -27,19 +51,20 @@ class _LoginPageState extends State<LoginPage> {
   Future<void> loginUser() async {
     if (isLoggingIn) return;
 
-    final email = emailController.text.trim();
+    final schoolId = schoolIdController.text.trim();
     final password = passwordController.text;
 
-    // STEP 1: VALIDATE INPUTS
-    if (email.isEmpty || password.isEmpty) {
-      showMessage(context, 'Please enter your email and password.');
+    // Validate required fields
+    if (schoolId.isEmpty || password.isEmpty) {
+      showMessage(context, 'Please enter your School ID and password.');
       return;
     }
 
-    final emailPattern = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
+    // Validate School ID format
+    final schoolIdPattern = RegExp(r'^\d{2}-\d{6}$');
 
-    if (!emailPattern.hasMatch(email)) {
-      showMessage(context, 'Please enter a valid email address.');
+    if (!schoolIdPattern.hasMatch(schoolId)) {
+      showMessage(context, 'Invalid School ID. Use XX-XXXXXX.');
       return;
     }
 
@@ -48,21 +73,19 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     try {
-      // ==================================================
-      // STEP 2: REAL API AUTHENTICATION
-      // ==================================================
+      // ================================================
+      // REAL API AUTHENTICATION
+      // ================================================
 
       if (ApiConfig.useRealApi) {
         final loginUri = ApiConfig.loginUri;
 
         if (loginUri == null) {
           throw const ApiAuthException(
-            'API URL is not configured. '
-            'Contact the developer.',
+            'API URL is not configured. Contact the developer.',
           );
         }
 
-        // Remove any previously stored API token.
         await authTokenStorage.clear();
 
         final client = http.Client();
@@ -70,50 +93,38 @@ class _LoginPageState extends State<LoginPage> {
         try {
           final apiService = ApiAuthService(client: client, loginUri: loginUri);
 
-          // Send credentials to the web backend.
+          // Compatibility with existing ApiAuthService.
+          // The service currently requires the "email"
+          // parameter. This sends the School ID as its
+          // value until ApiAuthService is updated to
+          // submit the "school_id" JSON field.
           final session = await apiService.login(
-            email: email,
+            email: schoolId,
             password: password,
           );
 
-          // Confirm the returned account is permitted
-          // to use the mobile application.
           if (!session.user.isStudent && !session.user.isScanner) {
             throw const ApiAuthException(
               'This account cannot access the mobile app.',
             );
           }
 
-          // Clear any remembered demo login.
           await demoSessionStorage.clear();
-
-          // Store the backend-issued access token.
           await authTokenStorage.save(session);
 
-          if (!mounted) {
-            await authTokenStorage.clear();
-            return;
-          }
+          if (!mounted) return;
 
-          // Remove old mock authentication state.
           authService.logout();
-
-          // Remove previous local account data.
           clearTemporaryAccountData();
 
-          // Populate temporary display information
-          // from the authenticated API response.
           savedName = session.user.name;
           savedEmail = session.user.email;
           savedUserRole = session.user.role;
 
-          if (session.user.isScanner) {
-            demoScannerName = session.user.name;
-          } else {
-            demoScannerName = 'TMC Event Officer';
-          }
+          demoScannerName = session.user.isScanner
+              ? session.user.name
+              : 'TMC Event Officer';
 
-          // Open the navigation appropriate for role.
           Navigator.pushReplacement(context, animatedRoute(const MainPage()));
 
           return;
@@ -122,11 +133,14 @@ class _LoginPageState extends State<LoginPage> {
         }
       }
 
-      // ==================================================
-      // STEP 3: DEMO AUTHENTICATION
-      // ==================================================
+      // ================================================
+      // DEMO AUTHENTICATION
+      // ================================================
 
-      final user = await authService.login(email: email, password: password);
+      // The existing demo service is email-based.
+      // It must be updated before School ID demo
+      // accounts can authenticate.
+      final user = await authService.login(email: schoolId, password: password);
 
       if (!mounted) return;
 
@@ -138,7 +152,7 @@ class _LoginPageState extends State<LoginPage> {
           return;
         }
 
-        // Remember only the fixed student demo account.
+        // Existing demo-account recognition.
         final shouldRemember =
             user.isStudent &&
             user.email.toLowerCase() == 'student@test.local' &&
@@ -157,39 +171,14 @@ class _LoginPageState extends State<LoginPage> {
         return;
       }
 
-      // ==================================================
-      // STEP 4: EXISTING LOCALLY REGISTERED STUDENTS
-      // ==================================================
+      // ================================================
+      // INVALID LOGIN
+      // ================================================
 
-      final validLocalStudent =
-          savedEmail.isNotEmpty &&
-          savedPassword.isNotEmpty &&
-          email.toLowerCase() == savedEmail.toLowerCase() &&
-          password == savedPassword;
-
-      if (validLocalStudent) {
-        await demoSessionStorage.clear();
-
-        if (!mounted) return;
-
-        authService.startLocalStudentSession(
-          name: savedName,
-          email: savedEmail,
-        );
-
-        savedUserRole = 'student';
-        demoScannerName = 'TMC Event Officer';
-
-        Navigator.pushReplacement(context, animatedRoute(const MainPage()));
-
-        return;
-      }
-
-      // ==================================================
-      // STEP 5: INVALID LOGIN
-      // ==================================================
-
-      showMessage(context, 'Incorrect email or password.');
+      // Local School ID login requires a saved School ID
+      // from the registration system. It is not enabled
+      // until that storage is implemented.
+      showMessage(context, 'Incorrect School ID or password.');
     } on ApiAuthException catch (error) {
       if (ApiConfig.useRealApi) {
         try {
@@ -209,8 +198,6 @@ class _LoginPageState extends State<LoginPage> {
         authService.logout();
       }
 
-      // Never log passwords, access tokens,
-      // or full server response bodies.
       debugPrint('Login failed: ${error.runtimeType}');
 
       if (mounted) {
@@ -226,12 +213,12 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   // ======================================================
-  // DISPOSE CONTROLLERS
+  // DISPOSE
   // ======================================================
 
   @override
   void dispose() {
-    emailController.dispose();
+    schoolIdController.dispose();
     passwordController.dispose();
     super.dispose();
   }
@@ -248,7 +235,7 @@ class _LoginPageState extends State<LoginPage> {
         child: SafeArea(
           child: Stack(
             children: [
-              // TOP DECORATIVE CIRCLE
+              // Top background circle
               Positioned(
                 top: -70,
                 right: -60,
@@ -262,7 +249,7 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
 
-              // BOTTOM DECORATIVE CIRCLE
+              // Bottom background circle
               Positioned(
                 bottom: -90,
                 left: -70,
@@ -283,7 +270,6 @@ class _LoginPageState extends State<LoginPage> {
                     tween: Tween(begin: 0, end: 1),
                     duration: const Duration(milliseconds: 600),
                     curve: Curves.easeOutCubic,
-
                     builder: (context, value, child) {
                       return Opacity(
                         opacity: value,
@@ -293,7 +279,6 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       );
                     },
-
                     child: Container(
                       constraints: const BoxConstraints(maxWidth: 460),
                       padding: const EdgeInsets.fromLTRB(26, 28, 26, 22),
@@ -308,7 +293,6 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ],
                       ),
-
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
@@ -338,7 +322,6 @@ class _LoginPageState extends State<LoginPage> {
 
                           const SizedBox(height: 16),
 
-                          // APP TITLE
                           const Text(
                             'TMC EventEase',
                             textAlign: TextAlign.center,
@@ -372,32 +355,43 @@ class _LoginPageState extends State<LoginPage> {
                           const SizedBox(height: 4),
 
                           const Text(
-                            'Sign in to access events and attendance.',
+                            'Sign in using your School ID.',
                             style: TextStyle(color: textGrey, fontSize: 13),
                           ),
 
                           const SizedBox(height: 18),
 
-                          // EMAIL FIELD
+                          // ==================================
+                          // SCHOOL ID
+                          // ==================================
                           TextField(
-                            controller: emailController,
-                            keyboardType: TextInputType.emailAddress,
-                            autofillHints: const [AutofillHints.email],
-                            decoration: const InputDecoration(
-                              labelText: 'Email',
-                              prefixIcon: Icon(Icons.email_outlined),
+                            controller: schoolIdController,
+                            keyboardType: TextInputType.number,
+                            textInputAction: TextInputAction.next,
+                            maxLength: 9,
+                            onChanged: formatSchoolId,
+                            decoration: InputDecoration(
+                              labelText: 'School ID',
+                              hintText: '00-000000',
+                              counterText: '',
+                              prefixIcon: const Icon(Icons.badge_outlined),
+                              helperText: 'Enter your 8-digit School ID',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
                             ),
                           ),
 
                           const SizedBox(height: 14),
 
-                          // PASSWORD FIELD
+                          // ==================================
+                          // PASSWORD
+                          // ==================================
                           TextField(
                             controller: passwordController,
                             obscureText: hidePassword,
                             autofillHints: const [AutofillHints.password],
                             onSubmitted: (_) => loginUser(),
-
                             decoration: InputDecoration(
                               labelText: 'Password',
                               prefixIcon: const Icon(Icons.lock_outline),
@@ -418,9 +412,9 @@ class _LoginPageState extends State<LoginPage> {
 
                           const SizedBox(height: 4),
 
-                          // ======================================================
-                          // FORGOT PASSWORD BUTTON
-                          // ======================================================
+                          // ==================================
+                          // FORGOT PASSWORD
+                          // ==================================
                           Align(
                             alignment: Alignment.centerRight,
                             child: TextButton(
@@ -430,9 +424,8 @@ class _LoginPageState extends State<LoginPage> {
                                       Navigator.push(
                                         context,
                                         animatedRoute(
-                                          ForgotPasswordPage(
-                                            initialEmail: emailController.text
-                                                .trim(),
+                                          const ForgotPasswordPage(
+                                            initialEmail: '',
                                           ),
                                         ),
                                       );
@@ -448,17 +441,17 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                           ),
 
-                          // REMEMBER ME - DEMO MODE ONLY
+                          // ==================================
+                          // DEMO REMEMBER ME
+                          // ==================================
                           if (!ApiConfig.useRealApi) ...[
                             const SizedBox(height: 8),
-
                             CheckboxListTile(
                               contentPadding: EdgeInsets.zero,
                               dense: true,
                               controlAffinity: ListTileControlAffinity.leading,
                               activeColor: navy,
                               value: rememberDemoStudent,
-
                               onChanged: isLoggingIn
                                   ? null
                                   : (value) {
@@ -466,7 +459,6 @@ class _LoginPageState extends State<LoginPage> {
                                         rememberDemoStudent = value ?? false;
                                       });
                                     },
-
                               title: const Text(
                                 'Remember student demo login',
                                 style: TextStyle(
@@ -480,7 +472,9 @@ class _LoginPageState extends State<LoginPage> {
 
                           const SizedBox(height: 20),
 
+                          // ==================================
                           // LOGIN BUTTON
+                          // ==================================
                           ElevatedButton.icon(
                             onPressed: isLoggingIn ? null : loginUser,
                             icon: isLoggingIn
@@ -494,14 +488,15 @@ class _LoginPageState extends State<LoginPage> {
                                   )
                                 : const Icon(Icons.login_rounded),
                             label: Text(
-                              isLoggingIn ? 'Signing In...' : 'Login',
+                              isLoggingIn ? 'Signing In...' : 'Sign In',
                             ),
                           ),
 
-                          // REGISTRATION - DEMO MODE ONLY
+                          // ==================================
+                          // REGISTRATION
+                          // ==================================
                           if (!ApiConfig.useRealApi) ...[
                             const SizedBox(height: 8),
-
                             TextButton(
                               onPressed: isLoggingIn
                                   ? null

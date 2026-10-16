@@ -128,7 +128,7 @@ class _MainPageState extends State<MainPage> {
           Icons.confirmation_num_rounded,
           color: selectedIconColor,
         ),
-        label: 'My Events',
+        label: 'My Passes',
       ),
       NavigationDestination(
         icon: Icon(
@@ -217,7 +217,7 @@ class _MainPageState extends State<MainPage> {
           ),
 
           child: NavigationBar(
-            height: 72,
+            height: 68,
             selectedIndex: safeIndex,
 
             backgroundColor: navigationBackground,

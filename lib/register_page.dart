@@ -1,8 +1,36 @@
 part of 'main.dart';
 
-// ======================================================
-// TMC EVENTEASE - REGISTER PAGE
-// ======================================================
+// Student ID: exactly 2 digits, a dash, then up to 6 digits.
+// Accepts pasted IDs and preserves the caret when editing in the middle.
+class StudentIdFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final beforeCaret = newValue.selection.baseOffset
+        .clamp(0, newValue.text.length)
+        .toInt();
+    final digitsBeforeCaret = newValue.text
+        .substring(0, beforeCaret)
+        .replaceAll(RegExp(r'\D'), '')
+        .length
+        .clamp(0, 8)
+        .toInt();
+    final digits = newValue.text.replaceAll(RegExp(r'\D'), '');
+    final limited = digits.length > 8 ? digits.substring(0, 8) : digits;
+    final formatted = limited.length >= 2
+        ? '${limited.substring(0, 2)}-${limited.substring(2)}'
+        : limited;
+    var caret = digitsBeforeCaret;
+    if (limited.length >= 2 && digitsBeforeCaret >= 2) caret++;
+    if (caret > formatted.length) caret = formatted.length;
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: caret),
+    );
+  }
+}
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -12,114 +40,13 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
-  // ====================================================
-  // TEXT CONTROLLERS
-  // ====================================================
-
   final nameController = TextEditingController();
   final emailController = TextEditingController();
   final studentIdController = TextEditingController();
+  final blockController = TextEditingController();
   final passwordController = TextEditingController();
-
-  // ====================================================
-  // SELECTED STUDENT INFORMATION
-  // ====================================================
-
-  String selectedDepartment = 'College of Computer Studies';
-  String selectedCourse = 'BSIT';
-  String selectedYear = '1st Year';
-  String selectedBlock = '';
-
-  bool hidePassword = true;
-
-  // ======================================================
-  // PASSWORD STRENGTH VALIDATION
-  // ======================================================
-
-  bool hasMinLength(String password) => password.length >= 8;
-
-  bool hasUppercase(String password) => RegExp(r'[A-Z]').hasMatch(password);
-
-  bool hasLowercase(String password) => RegExp(r'[a-z]').hasMatch(password);
-
-  bool hasNumber(String password) => RegExp(r'[0-9]').hasMatch(password);
-
-  bool hasSpecialCharacter(String password) =>
-      RegExp(r'[!@#$%^&*(),.?":{}|<>_\-+=]').hasMatch(password);
-
-  // Count satisfied requirements.
-  int passwordStrength(String password) {
-    int strength = 0;
-
-    if (hasMinLength(password)) strength++;
-    if (hasUppercase(password)) strength++;
-    if (hasLowercase(password)) strength++;
-    if (hasNumber(password)) strength++;
-    if (hasSpecialCharacter(password)) strength++;
-
-    return strength;
-  }
-
-  // All five requirements must be satisfied.
-  bool isStrongPassword(String password) {
-    return passwordStrength(password) == 5;
-  }
-
-  // Strength indicator color.
-  Color strengthColor(int strength) {
-    if (strength == 5) {
-      return Colors.green;
-    }
-
-    if (strength >= 3) {
-      return Colors.orange;
-    }
-
-    return Colors.red;
-  }
-
-  // Strength indicator label.
-  String strengthLabel(int strength) {
-    if (strength == 5) {
-      return 'Strong';
-    }
-
-    if (strength >= 3) {
-      return 'Moderate';
-    }
-
-    return 'Weak';
-  }
-
-  // Reusable requirement indicator.
-  Widget passwordRequirement(String title, bool isPassed) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 5),
-      child: Row(
-        children: [
-          Icon(
-            isPassed
-                ? Icons.check_circle_rounded
-                : Icons.radio_button_unchecked,
-            size: 17,
-            color: isPassed ? Colors.green : textGrey,
-          ),
-          const SizedBox(width: 8),
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 12,
-              color: isPassed ? Colors.green : textGrey,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ====================================================
-  // TMC DEPARTMENTS AND COURSES
-  // ====================================================
+  final confirmPasswordController = TextEditingController();
+  final _stepForms = List.generate(3, (_) => GlobalKey<FormState>());
 
   final Map<String, List<String>> departmentCourses = {
     'College of Computer Studies': ['BSIT'],
@@ -132,601 +59,564 @@ class _RegisterPageState extends State<RegisterPage> {
     ],
   };
 
-  // ====================================================
-  // REGISTER STUDENT
-  // ====================================================
+  String selectedDepartment = 'College of Computer Studies';
+  String selectedCourse = 'BSIT';
+  String selectedYear = '1st Year';
+  int currentStep = 0;
+  bool hidePassword = true;
+  bool hideConfirmPassword = true;
+  bool acceptedTerms = false;
+  bool triedTerms = false;
+
+  bool hasMinLength(String value) => value.length >= 8;
+  bool hasUppercase(String value) => RegExp(r'[A-Z]').hasMatch(value);
+  bool hasLowercase(String value) => RegExp(r'[a-z]').hasMatch(value);
+  bool hasNumber(String value) => RegExp(r'[0-9]').hasMatch(value);
+  bool hasSpecialCharacter(String value) =>
+      RegExp(r'[!@#$%^&*(),.?":{}|<>_\-+=]').hasMatch(value);
+
+  int passwordStrength(String value) => [
+    hasMinLength(value),
+    hasUppercase(value),
+    hasLowercase(value),
+    hasNumber(value),
+    hasSpecialCharacter(value),
+  ].where((satisfied) => satisfied).length;
+
+  bool isStrongPassword(String value) => passwordStrength(value) == 5;
+
+  String? validateEmail(String? value) {
+    final email = (value ?? '').trim();
+    if (email.isEmpty) return 'Please enter your email address.';
+    if (!RegExp(
+      r'^[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}$',
+    ).hasMatch(email)) {
+      return 'Enter a valid email address.';
+    }
+    return null;
+  }
+
+  void nextStep() {
+    FocusScope.of(context).unfocus();
+    if (!(_stepForms[currentStep].currentState?.validate() ?? false)) return;
+    if (currentStep < 2) {
+      setState(() => currentStep++);
+    } else {
+      registerUser();
+    }
+  }
 
   void registerUser() {
-    final name = nameController.text.trim();
-    final email = emailController.text.trim();
-    final studentId = studentIdController.text.trim();
-    final password = passwordController.text;
+    if (!(_stepForms[2].currentState?.validate() ?? false)) return;
+    setState(() => triedTerms = true);
+    if (!acceptedTerms) return;
 
-    // VALIDATE REQUIRED FIELDS
-
-    if (name.isEmpty ||
-        email.isEmpty ||
-        studentId.isEmpty ||
-        password.isEmpty) {
-      showMessage(context, 'Please complete all required fields.');
-      return;
-    }
-
-    // VALIDATE EMAIL
-
-    if (!isValidEmail(email)) {
-      showMessage(context, 'Please enter a valid email address.');
-      return;
-    }
-
-    // VALIDATE STUDENT ID
-
-    if (studentId.isEmpty) {
-      showMessage(context, 'Please enter your Student ID.');
-      return;
-    }
-
-    // VALIDATE BLOCK
-
-    if (selectedBlock.trim().isEmpty) {
-      showMessage(context, 'Please enter your block.');
-      return;
-    }
-
-    // ======================================================
-    // PASSWORD SECURITY STANDARD
-    // ======================================================
-
-    if (!isStrongPassword(password)) {
+    if (ApiConfig.useRealApi) {
       showMessage(
         context,
-        'Password must contain at least 8 characters, '
-        'uppercase and lowercase letters, '
-        'a number, and a special character.',
+        'Registration through Laravel is not configured yet. Switch to Demo Mode to test local registration.',
       );
       return;
     }
 
-    // ==================================================
-    // CLEAR PREVIOUS LOCAL STUDENT DATA
-    // ==================================================
+    final name = nameController.text.trim();
+    final email = emailController.text.trim();
+    final studentId = studentIdController.text.trim();
+    final password = passwordController.text;
+    final block = blockController.text.trim();
 
-    // This local demo supports one registered account
-    // at a time. If the email or Student ID changes,
-    // clear activity belonging to the previous account.
-
+    // Demo registration supports a single local student account.
     if (savedEmail.isNotEmpty &&
         (savedEmail.toLowerCase() != email.toLowerCase() ||
             savedStudentId != studentId)) {
       clearStudentActivityData();
     }
-
-    // ==================================================
-    // SAVE STUDENT INFORMATION LOCALLY
-    // ==================================================
-
     savedName = name;
     savedEmail = email;
     savedStudentId = studentId;
-
     savedDepartment = selectedDepartment;
     savedCourse = selectedCourse;
     savedYear = selectedYear;
-    savedBlock = selectedBlock;
+    savedBlock = block;
+    savedPassword = password; // Existing demo-only implementation.
 
-    savedPassword = password;
-
-    // ==================================================
-    // REGISTRATION SUCCESS
-    // ==================================================
-
-    showMessage(context, 'Account created successfully!');
-
+    showMessage(context, 'Demo student account created! Please log in.');
     Navigator.pop(context);
   }
 
-  // ====================================================
-  // DISPOSE CONTROLLERS
-  // ====================================================
+  Widget field({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    String? hint,
+    String? helper,
+    TextInputType? keyboard,
+    TextCapitalization capitalization = TextCapitalization.none,
+    List<TextInputFormatter>? formatters,
+    String? Function(String?)? validator,
+    bool obscure = false,
+    Widget? suffix,
+    void Function(String)? onChanged,
+  }) {
+    return TextFormField(
+      controller: controller,
+      keyboardType: keyboard,
+      textCapitalization: capitalization,
+      inputFormatters: formatters,
+      obscureText: obscure,
+      onChanged: onChanged,
+      autovalidateMode: AutovalidateMode.onUserInteraction,
+      validator: validator,
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        helperText: helper,
+        prefixIcon: Icon(icon),
+        suffixIcon: suffix,
+      ),
+    );
+  }
+
+  Widget sectionHeading(String title, String description) => Padding(
+    padding: const EdgeInsets.only(bottom: 20),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w800,
+            color: textDark,
+          ),
+        ),
+        const SizedBox(height: 5),
+        Text(
+          description,
+          style: const TextStyle(fontSize: 13, color: textGrey),
+        ),
+      ],
+    ),
+  );
+
+  Widget requirement(String label, bool satisfied) => Padding(
+    padding: const EdgeInsets.only(bottom: 7),
+    child: Row(
+      children: [
+        Icon(
+          satisfied ? Icons.check_circle_rounded : Icons.circle_outlined,
+          size: 17,
+          color: satisfied ? Colors.green.shade700 : textGrey,
+        ),
+        const SizedBox(width: 9),
+        Expanded(
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: satisfied ? Colors.green.shade700 : textGrey,
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+
+  Widget personalStep() => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      sectionHeading(
+        'Personal information',
+        'Use your official student details for your account.',
+      ),
+      field(
+        controller: nameController,
+        label: 'Full name',
+        hint: 'Juan Dela Cruz',
+        icon: Icons.person_outline_rounded,
+        capitalization: TextCapitalization.words,
+        validator: (v) =>
+            (v ?? '').trim().isEmpty ? 'Please enter your full name.' : null,
+      ),
+      const SizedBox(height: 16),
+      field(
+        controller: studentIdController,
+        label: 'Student ID',
+        hint: '00-000000',
+        helper: 'Two digits, a dash, then six digits',
+        icon: Icons.badge_outlined,
+        keyboard: TextInputType.number,
+        formatters: [StudentIdFormatter()],
+        validator: (v) => RegExp(r'^\d{2}-\d{6}$').hasMatch(v ?? '')
+            ? null
+            : 'Enter the full ID: 00-000000',
+      ),
+      const SizedBox(height: 16),
+      field(
+        controller: emailController,
+        label: 'Email address',
+        hint: 'student@example.com',
+        helper: 'An email verification step will be added with Laravel.',
+        icon: Icons.mail_outline_rounded,
+        keyboard: TextInputType.emailAddress,
+        validator: validateEmail,
+      ),
+    ],
+  );
+
+  Widget academicStep() => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      sectionHeading(
+        'Academic information',
+        'Tell us where you belong within Trinidad Municipal College.',
+      ),
+      DropdownButtonFormField<String>(
+        initialValue: selectedDepartment,
+        isExpanded: true,
+        decoration: const InputDecoration(
+          labelText: 'Department',
+          prefixIcon: Icon(Icons.account_balance_outlined),
+        ),
+        items: departmentCourses.keys
+            .map(
+              (d) => DropdownMenuItem(
+                value: d,
+                child: Text(d, overflow: TextOverflow.ellipsis),
+              ),
+            )
+            .toList(),
+        onChanged: (v) {
+          if (v == null) return;
+          setState(() {
+            selectedDepartment = v;
+            selectedCourse = departmentCourses[v]!.first;
+          });
+        },
+      ),
+      const SizedBox(height: 16),
+      DropdownButtonFormField<String>(
+        key: ValueKey(selectedDepartment),
+        initialValue: selectedCourse,
+        isExpanded: true,
+        decoration: const InputDecoration(
+          labelText: 'Course / Program',
+          prefixIcon: Icon(Icons.school_outlined),
+        ),
+        items: departmentCourses[selectedDepartment]!
+            .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+            .toList(),
+        onChanged: (v) {
+          if (v != null) setState(() => selectedCourse = v);
+        },
+      ),
+      const SizedBox(height: 16),
+      DropdownButtonFormField<String>(
+        initialValue: selectedYear,
+        decoration: const InputDecoration(
+          labelText: 'Year level',
+          prefixIcon: Icon(Icons.calendar_month_outlined),
+        ),
+        items: [
+          '1st Year',
+          '2nd Year',
+          '3rd Year',
+          '4th Year',
+        ].map((y) => DropdownMenuItem(value: y, child: Text(y))).toList(),
+        onChanged: (v) {
+          if (v != null) setState(() => selectedYear = v);
+        },
+      ),
+      const SizedBox(height: 16),
+      field(
+        controller: blockController,
+        label: 'Block / Section',
+        hint: 'e.g. 1',
+        icon: Icons.groups_outlined,
+        capitalization: TextCapitalization.characters,
+        validator: (v) =>
+            (v ?? '').trim().isEmpty ? 'Please enter your block.' : null,
+      ),
+    ],
+  );
+
+  Widget securityStep() {
+    final password = passwordController.text;
+    final strength = passwordStrength(password);
+    final strengthColor = strength == 5
+        ? Colors.green.shade700
+        : strength >= 3
+        ? Colors.orange.shade800
+        : Colors.red.shade700;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        sectionHeading(
+          'Account security',
+          'Create a strong password and confirm it before registering.',
+        ),
+        field(
+          controller: passwordController,
+          label: 'Password',
+          icon: Icons.lock_outline,
+          obscure: hidePassword,
+          onChanged: (_) => setState(() {}),
+          suffix: IconButton(
+            tooltip: hidePassword ? 'Show password' : 'Hide password',
+            onPressed: () => setState(() => hidePassword = !hidePassword),
+            icon: Icon(
+              hidePassword
+                  ? Icons.visibility_outlined
+                  : Icons.visibility_off_outlined,
+            ),
+          ),
+          validator: (v) => isStrongPassword(v ?? '')
+              ? null
+              : 'Password must meet all requirements.',
+        ),
+        const SizedBox(height: 14),
+        if (password.isNotEmpty) ...[
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Password strength',
+                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+              ),
+              Text(
+                strength == 5
+                    ? 'Strong'
+                    : strength >= 3
+                    ? 'Moderate'
+                    : 'Weak',
+                style: TextStyle(fontSize: 12, color: strengthColor),
+              ),
+            ],
+          ),
+          const SizedBox(height: 7),
+          LinearProgressIndicator(
+            value: strength / 5,
+            color: strengthColor,
+            backgroundColor: borderColor,
+            minHeight: 6,
+            borderRadius: BorderRadius.circular(6),
+          ),
+          const SizedBox(height: 15),
+        ],
+        requirement('At least 8 characters', hasMinLength(password)),
+        requirement('An uppercase letter', hasUppercase(password)),
+        requirement('A lowercase letter', hasLowercase(password)),
+        requirement('A number', hasNumber(password)),
+        requirement('A special character', hasSpecialCharacter(password)),
+        const SizedBox(height: 14),
+        field(
+          controller: confirmPasswordController,
+          label: 'Confirm password',
+          icon: Icons.verified_user_outlined,
+          obscure: hideConfirmPassword,
+          suffix: IconButton(
+            tooltip: hideConfirmPassword ? 'Show password' : 'Hide password',
+            onPressed: () =>
+                setState(() => hideConfirmPassword = !hideConfirmPassword),
+            icon: Icon(
+              hideConfirmPassword
+                  ? Icons.visibility_outlined
+                  : Icons.visibility_off_outlined,
+            ),
+          ),
+          validator: (v) {
+            if ((v ?? '').isEmpty) return 'Please confirm your password.';
+            if (v != passwordController.text) return 'Passwords do not match.';
+            return null;
+          },
+        ),
+        const SizedBox(height: 14),
+        CheckboxListTile(
+          value: acceptedTerms,
+          activeColor: navy,
+          contentPadding: EdgeInsets.zero,
+          controlAffinity: ListTileControlAffinity.leading,
+          title: const Text(
+            'I agree to use my details for this demo registration.',
+            style: TextStyle(fontSize: 13),
+          ),
+          onChanged: (v) => setState(() => acceptedTerms = v ?? false),
+        ),
+        if (triedTerms && !acceptedTerms)
+          const Padding(
+            padding: EdgeInsets.only(left: 12),
+            child: Text(
+              'Please accept before continuing.',
+              style: TextStyle(color: Colors.red, fontSize: 12),
+            ),
+          ),
+      ],
+    );
+  }
 
   @override
   void dispose() {
     nameController.dispose();
     emailController.dispose();
     studentIdController.dispose();
+    blockController.dispose();
     passwordController.dispose();
+    confirmPasswordController.dispose();
     super.dispose();
   }
 
-  // ====================================================
-  // REGISTRATION PAGE UI
-  // ====================================================
-
   @override
   Widget build(BuildContext context) {
+    const steps = ['Personal', 'Academic', 'Security'];
     return Scaffold(
-      appBar: AppBar(title: const Text('Create Account')),
-
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(18, 22, 18, 32),
-
+      backgroundColor: const Color(0xFFF5F7FB),
+      appBar: AppBar(title: const Text('Student Registration')),
+      body: SafeArea(
         child: Center(
-          child: TweenAnimationBuilder<double>(
-            tween: Tween(begin: 0, end: 1),
-            duration: const Duration(milliseconds: 500),
-            curve: Curves.easeOutCubic,
-
-            builder: (context, value, child) {
-              return Opacity(
-                opacity: value,
-                child: Transform.translate(
-                  offset: Offset(0, 18 * (1 - value)),
-                  child: child,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 560),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(18, 18, 18, 32),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: borderColor),
                 ),
-              );
-            },
-
-            child: Container(
-              constraints: const BoxConstraints(maxWidth: 560),
-
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(26),
-                border: Border.all(color: borderColor),
-                boxShadow: [
-                  BoxShadow(
-                    color: navy.withValues(alpha: 0.07),
-                    blurRadius: 22,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
-              ),
-
-              child: Column(
-                children: [
-                  // ========================================
-                  // REGISTRATION HEADER
-                  // ========================================
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(22),
-
-                    decoration: const BoxDecoration(
-                      gradient: appGradient,
-                      borderRadius: BorderRadius.vertical(
-                        top: Radius.circular(25),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(22),
+                      decoration: const BoxDecoration(
+                        gradient: appGradient,
+                        borderRadius: BorderRadius.vertical(
+                          top: Radius.circular(23),
+                        ),
+                      ),
+                      child: const Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(
+                            Icons.how_to_reg_rounded,
+                            color: yellow,
+                            size: 35,
+                          ),
+                          SizedBox(height: 12),
+                          Text(
+                            'Join TMC EventEase',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 23,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          SizedBox(height: 5),
+                          Text(
+                            'Create your student account in three easy steps.',
+                            style: TextStyle(color: Colors.white70),
+                          ),
+                        ],
                       ),
                     ),
-
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 62,
-                          height: 62,
-
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.14),
-                            borderRadius: BorderRadius.circular(18),
-                            border: Border.all(color: Colors.white24),
-                          ),
-
-                          child: const Icon(
-                            Icons.person_add_alt_1_rounded,
-                            color: yellow,
-                            size: 32,
-                          ),
-                        ),
-
-                        const SizedBox(width: 14),
-
-                        const Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-
-                            children: [
-                              Text(
-                                'Create your account',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 21,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-
-                              SizedBox(height: 3),
-
-                              Text(
-                                'Enter your student information below.',
-                                style: TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 12.5,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // ========================================
-                  // REGISTRATION FORM
-                  // ========================================
-                  Padding(
-                    padding: const EdgeInsets.all(22),
-
-                    child: Column(
-                      children: [
-                        // ==================================
-                        // FULL NAME
-                        // ==================================
-                        TextField(
-                          controller: nameController,
-                          textCapitalization: TextCapitalization.words,
-                          decoration: const InputDecoration(
-                            labelText: 'Full Name',
-                            hintText: 'Juan Dela Cruz',
-                            prefixIcon: Icon(Icons.person_outline),
-                          ),
-                        ),
-
-                        const SizedBox(height: 14),
-
-                        // ==================================
-                        // EMAIL
-                        // ==================================
-                        TextField(
-                          controller: emailController,
-                          keyboardType: TextInputType.emailAddress,
-                          decoration: const InputDecoration(
-                            labelText: 'Email',
-                            hintText: 'juandelacruz@gmail.com',
-                            prefixIcon: Icon(Icons.email_outlined),
-                          ),
-                        ),
-
-                        const SizedBox(height: 14),
-
-                        // ==================================
-                        // STUDENT ID - NEW FIELD
-                        // ==================================
-                        TextField(
-                          controller: studentIdController,
-                          keyboardType: TextInputType.text,
-                          textCapitalization: TextCapitalization.characters,
-                          decoration: const InputDecoration(
-                            labelText: 'Student ID',
-                            hintText: '00-000000',
-                            prefixIcon: Icon(Icons.badge_outlined),
-                          ),
-                        ),
-
-                        const SizedBox(height: 14),
-
-                        // ==================================
-                        // DEPARTMENT
-                        // ==================================
-                        DropdownButtonFormField<String>(
-                          initialValue: selectedDepartment,
-                          isExpanded: true,
-
-                          decoration: const InputDecoration(
-                            labelText: 'Department',
-                            prefixIcon: Icon(Icons.account_balance_outlined),
-                          ),
-
-                          items: departmentCourses.keys.map((department) {
-                            return DropdownMenuItem<String>(
-                              value: department,
-                              child: Text(
-                                department,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            );
-                          }).toList(),
-
-                          onChanged: (value) {
-                            if (value == null) return;
-
-                            setState(() {
-                              selectedDepartment = value;
-                              selectedCourse = departmentCourses[value]!.first;
-                            });
-                          },
-                        ),
-
-                        const SizedBox(height: 14),
-
-                        // ==================================
-                        // COURSE / PROGRAM
-                        // ==================================
-                        DropdownButtonFormField<String>(
-                          key: ValueKey(selectedDepartment),
-                          initialValue: selectedCourse,
-                          isExpanded: true,
-
-                          decoration: const InputDecoration(
-                            labelText: 'Course / Program',
-                            prefixIcon: Icon(Icons.school_outlined),
-                          ),
-
-                          items: departmentCourses[selectedDepartment]!.map((
-                            course,
-                          ) {
-                            return DropdownMenuItem<String>(
-                              value: course,
-                              child: Text(course),
-                            );
-                          }).toList(),
-
-                          onChanged: (value) {
-                            if (value == null) return;
-
-                            setState(() {
-                              selectedCourse = value;
-                            });
-                          },
-                        ),
-
-                        const SizedBox(height: 14),
-
-                        // ==================================
-                        // YEAR LEVEL
-                        // ==================================
-                        DropdownButtonFormField<String>(
-                          initialValue: selectedYear,
-                          isExpanded: true,
-
-                          decoration: const InputDecoration(
-                            labelText: 'Year Level',
-                            prefixIcon: Icon(Icons.calendar_month_outlined),
-                          ),
-
-                          items: const [
-                            DropdownMenuItem(
-                              value: '1st Year',
-                              child: Text('1st Year'),
-                            ),
-                            DropdownMenuItem(
-                              value: '2nd Year',
-                              child: Text('2nd Year'),
-                            ),
-                            DropdownMenuItem(
-                              value: '3rd Year',
-                              child: Text('3rd Year'),
-                            ),
-                            DropdownMenuItem(
-                              value: '4th Year',
-                              child: Text('4th Year'),
-                            ),
-                          ],
-
-                          onChanged: (value) {
-                            if (value == null) return;
-
-                            setState(() {
-                              selectedYear = value;
-                            });
-                          },
-                        ),
-
-                        const SizedBox(height: 14),
-
-                        // ==================================
-                        // BLOCK - MANUAL TEXT INPUT
-                        // ==================================
-                        TextField(
-                          keyboardType: TextInputType.text,
-                          textCapitalization: TextCapitalization.characters,
-                          decoration: const InputDecoration(
-                            labelText: 'Block',
-                            hintText: 'Enter your Block (e.g. 1)',
-                            prefixIcon: Icon(Icons.groups_rounded),
-                          ),
-                          onChanged: (value) {
-                            selectedBlock = value.trim();
-                          },
-                        ),
-
-                        const SizedBox(height: 14),
-
-                        // ======================================================
-                        // PASSWORD INPUT WITH LIVE STRENGTH INDICATOR
-                        // ======================================================
-                        TextField(
-                          controller: passwordController,
-                          obscureText: hidePassword,
-
-                          // Automatically update strength while typing.
-                          onChanged: (value) {
-                            setState(() {});
-                          },
-
-                          decoration: InputDecoration(
-                            labelText: 'Password',
-                            prefixIcon: const Icon(Icons.lock_outline),
-
-                            suffixIcon: IconButton(
-                              onPressed: () {
-                                setState(() {
-                                  hidePassword = !hidePassword;
-                                });
-                              },
-                              icon: Icon(
-                                hidePassword
-                                    ? Icons.visibility_outlined
-                                    : Icons.visibility_off_outlined,
-                              ),
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 12),
-
-                        // ======================================================
-                        // PASSWORD REQUIREMENTS
-                        // ======================================================
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Show strength only when the user starts typing.
-                            if (passwordController.text.isNotEmpty) ...[
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  const Text(
-                                    'Password Strength',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w700,
-                                      color: textDark,
-                                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(22),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Row(
+                            children: List.generate(3, (i) {
+                              final active = i <= currentStep;
+                              return Expanded(
+                                child: Padding(
+                                  padding: EdgeInsets.only(
+                                    right: i == 2 ? 0 : 6,
                                   ),
-
-                                  Text(
-                                    strengthLabel(
-                                      passwordStrength(passwordController.text),
-                                    ),
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w700,
-                                      color: strengthColor(
-                                        passwordStrength(
-                                          passwordController.text,
+                                  child: Column(
+                                    children: [
+                                      Container(
+                                        height: 6,
+                                        decoration: BoxDecoration(
+                                          color: active ? navy : borderColor,
+                                          borderRadius: BorderRadius.circular(
+                                            5,
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-
-                              const SizedBox(height: 8),
-
-                              // ================================================
-                              // STRENGTH PROGRESS BAR
-                              // ================================================
-                              Row(
-                                children: List.generate(5, (index) {
-                                  final strength = passwordStrength(
-                                    passwordController.text,
-                                  );
-
-                                  return Expanded(
-                                    child: Container(
-                                      height: 7,
-                                      margin: EdgeInsets.only(
-                                        right: index == 4 ? 0 : 5,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: index < strength
-                                            ? strengthColor(strength)
-                                            : borderColor,
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                    ),
-                                  );
-                                }),
-                              ),
-
-                              const SizedBox(height: 14),
-                            ],
-
-                            const Text(
-                              'Password Requirements',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                                color: textDark,
-                              ),
-                            ),
-
-                            const SizedBox(height: 8),
-
-                            passwordRequirement(
-                              'At least 8 characters',
-                              hasMinLength(passwordController.text),
-                            ),
-
-                            passwordRequirement(
-                              'At least 1 uppercase letter',
-                              hasUppercase(passwordController.text),
-                            ),
-
-                            passwordRequirement(
-                              'At least 1 lowercase letter',
-                              hasLowercase(passwordController.text),
-                            ),
-
-                            passwordRequirement(
-                              'At least 1 number',
-                              hasNumber(passwordController.text),
-                            ),
-
-                            passwordRequirement(
-                              'At least 1 special character',
-                              hasSpecialCharacter(passwordController.text),
-                            ),
-
-                            // ================================================
-                            // PASSWORD APPROVED MESSAGE
-                            // ================================================
-                            if (isStrongPassword(passwordController.text))
-                              const Padding(
-                                padding: EdgeInsets.only(top: 8),
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.verified_user_rounded,
-                                      color: Colors.green,
-                                      size: 19,
-                                    ),
-                                    SizedBox(width: 7),
-                                    Expanded(
-                                      child: Text(
-                                        'Password meets all requirements!',
+                                      const SizedBox(height: 7),
+                                      Text(
+                                        steps[i],
                                         style: TextStyle(
-                                          color: Colors.green,
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w700,
+                                          fontSize: 11,
+                                          fontWeight: active
+                                              ? FontWeight.w700
+                                              : FontWeight.w400,
+                                          color: active ? navy : textGrey,
                                         ),
                                       ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
+                                ),
+                              );
+                            }),
+                          ),
+                          const SizedBox(height: 24),
+                          Form(
+                            key: _stepForms[currentStep],
+                            child: currentStep == 0
+                                ? personalStep()
+                                : currentStep == 1
+                                ? academicStep()
+                                : securityStep(),
+                          ),
+                          const SizedBox(height: 28),
+                          Row(
+                            children: [
+                              if (currentStep > 0) ...[
+                                Expanded(
+                                  child: OutlinedButton.icon(
+                                    onPressed: () =>
+                                        setState(() => currentStep--),
+                                    icon: const Icon(Icons.arrow_back_rounded),
+                                    label: const Text('Back'),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                              ],
+                              Expanded(
+                                flex: 2,
+                                child: ElevatedButton.icon(
+                                  onPressed: nextStep,
+                                  icon: Icon(
+                                    currentStep == 2
+                                        ? Icons.person_add_alt_1_rounded
+                                        : Icons.arrow_forward_rounded,
+                                  ),
+                                  label: Text(
+                                    currentStep == 2
+                                        ? 'Create Account'
+                                        : 'Continue',
+                                  ),
                                 ),
                               ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 22),
-
-                        // ==================================
-                        // CREATE ACCOUNT BUTTON
-                        // ==================================
-                        ElevatedButton.icon(
-                          onPressed: registerUser,
-                          icon: const Icon(Icons.person_add_alt_rounded),
-                          label: const Text('Create Account'),
-                        ),
-
-                        const SizedBox(height: 8),
-
-                        // ==================================
-                        // BACK TO LOGIN
-                        // ==================================
-                        TextButton(
-                          onPressed: () {
-                            Navigator.pop(context);
-                          },
-                          child: const Text(
-                            'Already have an account? Login',
-                            style: TextStyle(fontWeight: FontWeight.w700),
+                            ],
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 10),
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text('Already registered? Log in'),
+                          ),
+                          if (!ApiConfig.useRealApi)
+                            const Text(
+                              'Demo Mode · Account stays on this device session',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(fontSize: 11, color: textGrey),
+                            ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),

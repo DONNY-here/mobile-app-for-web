@@ -8,12 +8,12 @@ const Color navy = Color(0xFF0B2D5C);
 const Color blue = Color(0xFF174C8F);
 const Color yellow = Color(0xFFFFC83D);
 
-const Color lightBg = Color(0xFFF7F9FC);
+const Color lightBg = Color(0xFFF5F7FA);
 const Color lightNavy = Color(0xFFEAF1FA);
 
 const Color textDark = Color(0xFF172033);
 const Color textGrey = Color(0xFF748095);
-const Color borderColor = Color(0xFFE6EAF0);
+const Color borderColor = Color(0xFFE5EAF0);
 
 const LinearGradient appGradient = LinearGradient(
   colors: [navy, blue],

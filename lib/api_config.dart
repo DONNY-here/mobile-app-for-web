@@ -6,9 +6,7 @@ import 'package:flutter/foundation.dart';
 
 class ApiConfig {
   // Release builds must never use demo authentication.
-  static const bool useRealApi =
-      kReleaseMode ||
-      bool.fromEnvironment('EVENTEASE_USE_REAL_API', defaultValue: false);
+  static const bool useRealApi = true;
 
   // Actual server address will be supplied at launch.
   static const String baseUrl = String.fromEnvironment(
@@ -74,4 +72,32 @@ class ApiConfig {
 
     return login.replace(path: forgotPasswordPath);
   }
+
+
+  // ======================================================
+  // EVENTS API CONFIGURATION
+  // ======================================================
+
+  static const String eventsPath = String.fromEnvironment(
+    'EVENTEASE_EVENTS_PATH',
+    defaultValue: '/api/events',
+  );
+
+  static Uri? get eventsUri {
+    final login = loginUri;
+
+    if (login == null) {
+      return null;
+    }
+
+    if (!eventsPath.startsWith('/') ||
+        eventsPath.startsWith('//') ||
+        eventsPath.contains('?') ||
+        eventsPath.contains('#')) {
+      throw const FormatException('Invalid events API path.');
+    }
+
+    return login.replace(path: eventsPath);
+  }
+
 }
